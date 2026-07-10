@@ -59,8 +59,6 @@ public class ModuleManager {
 				}
 			}
 		}
-
-		MODULES.get(1).setEnabled(true);
 	}
 
 	public static ArrayList<Module> getModulesFromCategory(ModuleCategory moduleCategory) {

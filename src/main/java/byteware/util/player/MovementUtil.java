@@ -2,7 +2,7 @@ package byteware.util.player;
 
 import net.minecraft.entity.player.EntityPlayer;
 
-public class PlayerUtil {
+public class MovementUtil {
     public static double GetPlayerTickSpeed(EntityPlayer player) {
         return Math.sqrt((player.motionX * player.motionX) + (player.motionY * player.motionY) + (player.motionZ * player.motionZ));
     }
