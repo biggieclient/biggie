@@ -3,7 +3,7 @@ package byteware.util.player;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 
-public class RotationUtils {
+public class RotationUtil {
     public static float[] getRotationTo(EntityPlayer from, final double x, final double y, final double z) {
         final double relX = x - from.posX;
         final double relY = y - from.posY - from.getEyeHeight();

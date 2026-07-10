@@ -3,14 +3,11 @@ package byteware.module.modules.combat;
 import byteware.event.client.GameLoopEvent;
 import byteware.module.Module;
 import byteware.module.ModuleCategory;
-import byteware.setting.Setting;
 import byteware.setting.settings.BooleanSetting;
 import byteware.setting.settings.DoubleSetting;
 import byteware.setting.settings.ListSetting;
-import byteware.util.player.ChatUtil;
-import byteware.util.player.RotationUtils;
+import byteware.util.player.RotationUtil;
 import net.lenni0451.asmevents.event.EventTarget;
-import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -21,7 +18,6 @@ import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.MathHelper;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import org.lwjgl.input.Keyboard;
 
@@ -140,14 +136,14 @@ public class KillAura extends Module {
 		if (target == null)
 			return;
 
-		final float[] rots = RotationUtils.getRotationTo(mc.thePlayer, target.posX, target.posY + (target.getEyeHeight() * 0.5), target.posZ);
+		final float[] rots = RotationUtil.getRotationTo(mc.thePlayer, target.posX, target.posY + (target.getEyeHeight() * 0.5), target.posZ);
 		final AxisAlignedBB box = target.getEntityBoundingBox();
 
 		if (box == null)
 			return;
 
 		if (useHitbox.value) {
-			double dist = RotationUtils.rayCastToBoundingBox(
+			double dist = RotationUtil.rayCastToBoundingBox(
 					mc.thePlayer.posX, mc.thePlayer.posY + mc.thePlayer.getEyeHeight(), mc.thePlayer.posZ,
 					box.minX, box.maxX,
 					box.minY, box.maxY,
