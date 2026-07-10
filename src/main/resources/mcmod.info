@@ -1,0 +1,10 @@
+[
+  {
+    "name": "scammer",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "authorList": [
+      "maththekid"
+    ]
+  }
+]

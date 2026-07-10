@@ -1,0 +1,21 @@
+{
+  "minVersion": "0.7",
+  "required": true,
+  "package": "byteware.mixin",
+  "refmap": "refmap.biggie.json",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+	"accessors.MouseEventAccessor",
+	"entity.EntityPlayerMixin",
+	"network.NetworkManagerMixin"
+  ],
+  "client": [
+	"entity.EntityPlayerSPMixin",
+	"client.MinecraftMixin",
+	"client.PlayerControllerMPMixin",
+	"render.GuiInGameMixin"
+  ],
+  "injectors": {
+	"defaultRequire": 1
+  }
+}
