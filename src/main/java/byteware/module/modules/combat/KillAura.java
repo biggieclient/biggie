@@ -3,51 +3,172 @@ package byteware.module.modules.combat;
 import byteware.event.client.GameLoopEvent;
 import byteware.module.Module;
 import byteware.module.ModuleCategory;
+import byteware.setting.Setting;
+import byteware.setting.settings.BooleanSetting;
+import byteware.setting.settings.DoubleSetting;
+import byteware.setting.settings.ListSetting;
 import byteware.util.player.ChatUtil;
+import byteware.util.player.RotationUtils;
 import net.lenni0451.asmevents.event.EventTarget;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemSword;
+import net.minecraft.network.play.client.C02PacketUseEntity;
+import net.minecraft.network.play.client.C07PacketPlayerDigging;
+import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import org.lwjgl.input.Keyboard;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class KillAura extends Module {
-	private long lastMs;
+	private final ListSetting rotMode = new ListSetting("Rotation Mode", "Switch", "Single", "Switch");
+
+	private final DoubleSetting aps = new DoubleSetting("APS", 20, 1, 20, 0.5);
+
+	private final DoubleSetting attackDist = new DoubleSetting("Attack Range", 3.15, 3.0, 6.0, 0.05);
+	private final DoubleSetting blockDist = new DoubleSetting("Block Range", 4, 1, 6.0, 0.05);
+	private final DoubleSetting switchDelay = new DoubleSetting("Switch Delay", 250, 50, 1000, 50);
+
+	private final ListSetting blockMode = new ListSetting("Block Mode", "Normal", "None", "Normal");
+
+	private final BooleanSetting swing = new BooleanSetting("Swing", true);
+	private final BooleanSetting useHitbox = new BooleanSetting("Use Hitbox", true);
+
+	private boolean blocking = false;
+
+	private long lastAttack = 0;
+	private long lastSwitch = 0;
+
+	private int targetIndex = 0;
 
 	public KillAura() {
-		super("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
+		super("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R);
+	}
+
+	@Override
+	public void onDisable() {
+		lastAttack = 0;
+		lastSwitch = 0;
+		targetIndex = 0;
+
+		if (blocking) {
+			mc.getNetHandler().addToSendQueue(new C08PacketPlayerBlockPlacement(mc.thePlayer.getHeldItem()));
+			ReflectionHelper.setPrivateValue(EntityPlayer.class, mc.thePlayer, 1, "itemInUseCount", "field_71072_f");
+			blocking = false;
+		}
 	}
 
 	@EventTarget
 	public void onGameLoop(GameLoopEvent event) {
-		if (mc.theWorld != null && mc.thePlayer != null) {
-			for (Entity entity : mc.theWorld.loadedEntityList) {
-				if (entity instanceof EntityLivingBase) {
-					EntityLivingBase en = (EntityLivingBase) entity;
+		if (mc.theWorld == null || mc.thePlayer == null)
+			return;
 
-					if (en.deathTime != 0) {
-						continue;
-					}
+		final long currTime = System.currentTimeMillis();
 
-					if (en == mc.thePlayer) {
-						continue;
-					}
+		final boolean canAttack = (currTime - lastAttack) > (1000.0 / aps.value);
+		final boolean canCheckBlock = !(mc.thePlayer.getHeldItem() == null || mc.thePlayer.getHeldItem().getItem() == null) && mc.thePlayer.getHeldItem().getItem() instanceof ItemSword && !blockMode.value.equals("None");
 
-					if (mc.thePlayer.getDistanceToEntity(en) <= 3.15) {
-						double deltaX = en.posX - mc.thePlayer.posX;
-						double deltaZ = en.posZ - mc.thePlayer.posZ;
-						double length = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+		boolean canBlock = false;
+		final List<EntityLivingBase> targetList = new ArrayList<>();
 
-						deltaX /= length;
-						deltaZ /= length;
+		for (Entity entity : mc.theWorld.loadedEntityList) {
+			if (!(entity instanceof EntityLivingBase))
+				continue;
 
-						float yaw = (float) Math.toDegrees(Math.atan2(deltaZ, deltaX)) - 90;
+			final EntityLivingBase en = (EntityLivingBase) entity;
 
-						if (yaw < 0) {
-							yaw += 360;
-						}
-					}
+			if (en.deathTime != 0)
+				continue;
+
+			if (en == mc.thePlayer)
+				continue;
+
+			final double sqDist = mc.thePlayer.getDistanceSqToEntity(en);
+
+			if (canCheckBlock && sqDist <= (blockDist.value * blockDist.value)) {
+				if (!blocking) {
+					mc.getNetHandler().addToSendQueue(new C08PacketPlayerBlockPlacement(mc.thePlayer.getHeldItem()));
+					ReflectionHelper.setPrivateValue(EntityPlayer.class, mc.thePlayer, 1, "itemInUseCount", "field_71072_f");
+					blocking = true;
 				}
+
+				canBlock = true;
 			}
+
+			final double patchedMaxDist = useHitbox.value ? (attackDist.value + 1) : attackDist.value;
+
+			if (sqDist > (patchedMaxDist * patchedMaxDist))
+				continue;
+
+			targetList.add(en);
 		}
+
+		if (!canBlock && blocking) {
+			ReflectionHelper.setPrivateValue(EntityPlayer.class, mc.thePlayer, 0, "itemInUseCount", "field_71072_f");
+			mc.getNetHandler().addToSendQueue(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, new BlockPos(0, 0, 0), EnumFacing.DOWN));
+			blocking = false;
+		}
+
+		if (targetList.isEmpty())
+			return;
+
+		if ((currTime - lastSwitch) > switchDelay.value) {
+			++targetIndex;
+			lastSwitch = currTime;
+		}
+
+		if (targetIndex >= targetList.size()) {
+			targetIndex = 0;
+		}
+
+		EntityLivingBase target = null;
+
+		if (rotMode.value.equals("Single")) {
+			target = targetList.get(0);
+		} else if (rotMode.value.equals("Switch")) {
+			target = targetList.get(targetIndex);
+		}
+
+		if (target == null)
+			return;
+
+		final float[] rots = RotationUtils.getRotationTo(mc.thePlayer, target.posX, target.posY + (target.getEyeHeight() * 0.5), target.posZ);
+		final AxisAlignedBB box = target.getEntityBoundingBox();
+
+		if (box == null)
+			return;
+
+		if (useHitbox.value) {
+			double dist = RotationUtils.rayCastToBoundingBox(
+					mc.thePlayer.posX, mc.thePlayer.posY + mc.thePlayer.getEyeHeight(), mc.thePlayer.posZ,
+					box.minX, box.maxX,
+					box.minY, box.maxY,
+					box.minZ, box.maxZ,
+					rots[0] - 90, rots[1]
+			);
+
+			if (dist < 0 || dist > attackDist.value)
+				return;
+		}
+
+		mc.thePlayer.rotationYaw = rots[0] - 90;
+		mc.thePlayer.rotationPitch = rots[1];
+
+		if (!canAttack)
+			return;
+
+		if (swing.value)
+			mc.thePlayer.swingItem();
+
+		mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(target, C02PacketUseEntity.Action.ATTACK));
+		lastAttack = currTime;
 	}
 }

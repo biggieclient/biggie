@@ -45,13 +45,9 @@ public class Module {
 		this.settings.addAll(Arrays.asList(settings));
 	}
 
-	public void onEnable() {
+	public void onEnable() {}
 
-	}
-
-	public void onDisable() {
-
-	}
+	public void onDisable() {}
 
 	public void toggle() {
 		setEnabled(!enabled);

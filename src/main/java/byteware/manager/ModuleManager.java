@@ -34,6 +34,7 @@ public class ModuleManager {
 				// movement modules
 				new NoItemSlow(),
 				new Sprint(),
+				new Speed(),
 
 				// render modules
 				new ClickGuiModule(),
@@ -58,6 +59,8 @@ public class ModuleManager {
 				}
 			}
 		}
+
+		MODULES.get(1).setEnabled(true);
 	}
 
 	public static ArrayList<Module> getModulesFromCategory(ModuleCategory moduleCategory) {

@@ -1,6 +1,8 @@
 package byteware;
 
+import byteware.event.client.GameLoopEvent;
 import byteware.manager.ModuleManager;
+import net.lenni0451.asmevents.event.EventTarget;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
