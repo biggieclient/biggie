@@ -82,3 +82,7 @@ jar {
             'MixinConfigs': 'mixin.biggie.json'
     )
 }
+
+runClient {
+    args += ["--tweakClass", "org.spongepowered.asm.launch.MixinTweaker", "--mixin", "mixin.biggie.json"]
+}
