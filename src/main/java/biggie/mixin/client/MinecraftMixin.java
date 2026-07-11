@@ -2,6 +2,7 @@ package biggie.mixin.client;
 
 import biggie.Biggie;
 import biggie.event.client.GameLoopEvent;
+import biggie.event.client.LoadWorldEvent;
 import biggie.event.client.TickEvent;
 import biggie.manager.ModuleManager;
 import biggie.module.Module;
@@ -9,6 +10,7 @@ import biggie.module.modules.combat.NoHitDelay;
 import net.lenni0451.asmevents.EventManager;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.WorldClient;
 import org.lwjgl.input.Keyboard;
 import org.spongepowered.asm.lib.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -88,5 +90,17 @@ public class MinecraftMixin {
 		if (ModuleManager.getModule(NoHitDelay.class).isEnabled()) {
 			this.leftClickCounter = 0;
 		}
+	}
+
+	@Inject(
+			method = "loadWorld(Lnet/minecraft/client/multiplayer/WorldClient;Ljava/lang/String;)V",
+			at = @At("HEAD")
+	)
+	public void loadWorld_callLoadWorldEvent(
+			WorldClient worldClientIn,
+			String loadingMessage,
+			CallbackInfo ci
+	) {
+		EventManager.call(new LoadWorldEvent());
 	}
 }

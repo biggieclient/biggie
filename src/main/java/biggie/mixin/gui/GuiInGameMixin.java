@@ -1,6 +1,6 @@
-package biggie.mixin.render;
+package biggie.mixin.gui;
 
-import biggie.event.render.Game2DEvent;
+import biggie.event.render.Render2DEvent;
 import net.lenni0451.asmevents.EventManager;
 import net.minecraft.client.gui.GuiIngame;
 import net.minecraft.client.gui.ScaledResolution;
@@ -17,6 +17,6 @@ public class GuiInGameMixin {
 			at = @At("HEAD")
 	)
 	public void renderTooltip_callGame2DEvent(ScaledResolution sr, float partialTicks, CallbackInfo ci) {
-		EventManager.call(new Game2DEvent());
+		EventManager.call(new Render2DEvent());
 	}
 }

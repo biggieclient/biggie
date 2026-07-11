@@ -1,6 +1,6 @@
 package biggie.module.modules.render;
 
-import biggie.event.render.Game2DEvent;
+import biggie.event.render.Render2DEvent;
 import biggie.manager.ModuleManager;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
@@ -35,8 +35,8 @@ public class ArrayListModule extends Module {
 		super("ArrayList", ModuleCategory.RENDER, Keyboard.KEY_NONE);
 	}
 
-	@EventTarget(noParamEvents = Game2DEvent.class)
-	public void onGame2D() {
+	@EventTarget(noParamEvents = Render2DEvent.class)
+	public void onRender2D() {
 		final ArrayList<Module> enabledModules = (ArrayList<Module>) ModuleManager.MODULES
 				.parallelStream()
 				.filter(Module::isEnabled)

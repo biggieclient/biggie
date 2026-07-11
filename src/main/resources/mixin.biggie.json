@@ -13,8 +13,9 @@
 	"client.MinecraftMixin",
 	"client.PlayerControllerMPMixin",
 	"entity.EntityPlayerSPMixin",
+	"gui.GuiInGameMixin",
 	"model.ModelBipedMixin",
-	"render.GuiInGameMixin"
+	"renderer.EntityRendererMixin"
   ],
   "injectors": {
 	"defaultRequire": 1
