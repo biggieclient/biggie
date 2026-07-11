@@ -93,13 +93,17 @@ public class LeftClicker extends Module {
 				switch (randomizerType.value) {
 					case "Random":
 						delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * random.nextDouble()));
+
 						break;
 					case "Gaussian":
 						final double factor = reverse.value ? (1 - MathHelper.clamp_double(0.5 + random.nextGaussian() * 0.15, 0, 1)) : MathHelper.clamp_double(0.5 + random.nextGaussian() * 0.15, 0, 1);
+
 						delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * (factor)));
+
 						break;
 					case "Constant":
 						delay = (long) 1000 / cps.value;
+
 						break;
 				}
 
@@ -113,7 +117,7 @@ public class LeftClicker extends Module {
 				}
 
 				if (Mouse.isButtonDown(attackKey + 100)) {
-					if (currTime - lastMs < delay) {
+					if (currTime - lastMs >= delay) {
 						KeyBinding.setKeyBindState(attackKey, true);
 						KeyBinding.onTick(attackKey);
 
@@ -122,6 +126,13 @@ public class LeftClicker extends Module {
 						lastMs = currTime;
 						holding = true;
 					}
+				}
+			} else {
+				if (holding) {
+					KeyBinding.setKeyBindState(attackKey, false);
+					MouseUtil.setButtonState(attackKey + 100, false);
+
+					holding = false;
 				}
 			}
 		}

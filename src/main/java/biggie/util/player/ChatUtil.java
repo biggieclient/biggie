@@ -6,7 +6,7 @@ import net.minecraft.util.EnumChatFormatting;
 
 public class ChatUtil {
 	public static void addMessage(String message) {
-		String clientTag = "[" + EnumChatFormatting.AQUA + "Byteware" + EnumChatFormatting.RESET + "] ";
+		String clientTag = "[" + EnumChatFormatting.GREEN + "Biggie" + EnumChatFormatting.RESET + "] ";
 
 		Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(clientTag + message));
 	}

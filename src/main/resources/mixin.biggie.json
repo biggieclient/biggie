@@ -13,6 +13,7 @@
 	"client.MinecraftMixin",
 	"client.PlayerControllerMPMixin",
 	"entity.EntityPlayerSPMixin",
+	"model.ModelBipedMixin",
 	"render.GuiInGameMixin"
   ],
   "injectors": {

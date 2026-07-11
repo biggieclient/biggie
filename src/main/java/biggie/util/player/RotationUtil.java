@@ -14,7 +14,7 @@ public class RotationUtil {
         final float yaw = MathHelper.wrapAngleTo180_float((float) Math.toDegrees(Math.atan2(relZ, relX)));
         final float pitch = -MathHelper.wrapAngleTo180_float((float) Math.toDegrees(Math.atan2(relY, dist)));
 
-        return new float[] { yaw, pitch };
+        return new float[] { yaw - 90, pitch };
     }
 
     public static double rayCastToBoundingBox(

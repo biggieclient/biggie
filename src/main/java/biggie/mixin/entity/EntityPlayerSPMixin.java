@@ -2,6 +2,8 @@ package biggie.mixin.entity;
 
 import biggie.event.motion.ItemSlowDownEvent;
 import biggie.event.motion.LivingUpdateEvent;
+import biggie.event.motion.MotionEvent;
+import biggie.util.render.ServerRotation;
 import com.mojang.authlib.GameProfile;
 import net.lenni0451.asmevents.EventManager;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
@@ -9,10 +11,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.network.NetHandlerPlayClient;
+import net.minecraft.network.play.client.C03PacketPlayer;
+import net.minecraft.network.play.client.C0BPacketEntityAction;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.MovementInput;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -60,6 +66,131 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 
 	@Shadow
 	protected abstract void sendHorseJump();
+
+	@Shadow
+	private boolean serverSprintState;
+
+	@Shadow
+	@Final
+	public NetHandlerPlayClient sendQueue;
+
+	@Shadow
+	private boolean serverSneakState;
+
+	@Shadow
+	private double lastReportedPosX;
+
+	@Shadow
+	private double lastReportedPosY;
+
+	@Shadow
+	private double lastReportedPosZ;
+
+	@Shadow
+	private float lastReportedYaw;
+
+	@Shadow
+	private float lastReportedPitch;
+
+	@Shadow
+	private int positionUpdateTicks;
+
+	@Inject(
+			method = "onUpdateWalkingPlayer",
+			at = @At("HEAD"),
+			cancellable = true
+	)
+	public void onUpdateWalkingPlayer_rewrite(CallbackInfo ci) {
+		boolean sprinting = this.isSprinting();
+		boolean sneaking = this.isSneaking();
+		MotionEvent preMotionEvent = new MotionEvent(
+				EnumEventType.PRE,
+				this.posX,
+				this.getEntityBoundingBox().minY,
+				this.posZ,
+				this.rotationYaw,
+				this.rotationPitch,
+				this.onGround
+		);
+
+		if (sprinting != this.serverSprintState) {
+			if (sprinting) {
+				this.sendQueue.addToSendQueue(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.START_SPRINTING));
+			} else {
+				this.sendQueue.addToSendQueue(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.STOP_SPRINTING));
+			}
+
+			this.serverSprintState = sprinting;
+		}
+
+		if (sneaking != this.serverSneakState) {
+			if (sneaking) {
+				this.sendQueue.addToSendQueue(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.START_SNEAKING));
+			} else {
+				this.sendQueue.addToSendQueue(new C0BPacketEntityAction(this, C0BPacketEntityAction.Action.STOP_SNEAKING));
+			}
+
+			this.serverSneakState = sneaking;
+		}
+
+		if (this.isCurrentViewEntity()) {
+			EventManager.call(preMotionEvent);
+
+			this.rotationYawHead = preMotionEvent.yaw;
+			ServerRotation.YAW = preMotionEvent.yaw;
+			ServerRotation.PITCH = preMotionEvent.pitch;
+
+			double diffX = preMotionEvent.x - this.lastReportedPosX;
+			double diffY = preMotionEvent.y - this.lastReportedPosY;
+			double diffZ = preMotionEvent.z - this.lastReportedPosZ;
+			double diffYaw = preMotionEvent.yaw - this.lastReportedYaw;
+			double diffPitch = preMotionEvent.pitch - this.lastReportedPitch;
+			boolean move = diffX * diffX + diffY * diffY + diffZ * diffZ > 9.0E-4D || this.positionUpdateTicks >= 20;
+			boolean rotation = diffYaw != 0.0D || diffPitch != 0.0D;
+
+			if (this.ridingEntity == null) {
+				if (move && rotation) {
+					this.sendQueue.addToSendQueue(new C03PacketPlayer.C06PacketPlayerPosLook(preMotionEvent.x, preMotionEvent.y, preMotionEvent.z, preMotionEvent.yaw, preMotionEvent.pitch, preMotionEvent.onGround));
+				} else if (move) {
+					this.sendQueue.addToSendQueue(new C03PacketPlayer.C04PacketPlayerPosition(preMotionEvent.x, preMotionEvent.y, preMotionEvent.z, preMotionEvent.onGround));
+				} else if (rotation) {
+					this.sendQueue.addToSendQueue(new C03PacketPlayer.C05PacketPlayerLook(preMotionEvent.yaw, preMotionEvent.pitch, preMotionEvent.onGround));
+				} else {
+					this.sendQueue.addToSendQueue(new C03PacketPlayer(preMotionEvent.onGround));
+				}
+			} else {
+				this.sendQueue.addToSendQueue(new C03PacketPlayer.C06PacketPlayerPosLook(this.motionX, -999.0D, this.motionZ, preMotionEvent.yaw, preMotionEvent.pitch, preMotionEvent.onGround));
+
+				move = false;
+			}
+
+			++this.positionUpdateTicks;
+
+			if (move) {
+				this.lastReportedPosX = preMotionEvent.x;
+				this.lastReportedPosY = preMotionEvent.y;
+				this.lastReportedPosZ = preMotionEvent.z;
+				this.positionUpdateTicks = 0;
+			}
+
+			if (rotation) {
+				this.lastReportedYaw = preMotionEvent.yaw;
+				this.lastReportedPitch = preMotionEvent.pitch;
+			}
+
+			EventManager.call(new MotionEvent(
+					EnumEventType.PRE,
+					this.posX,
+					this.getEntityBoundingBox().minY,
+					this.posZ,
+					this.rotationYaw,
+					this.rotationPitch,
+					this.onGround
+			));
+		}
+
+		ci.cancel();
+	}
 
 	@Inject(
 			method = "onLivingUpdate",
