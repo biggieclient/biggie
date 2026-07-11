@@ -3,6 +3,144 @@ package byteware.module.modules.combat;
 import byteware.event.client.GameLoopEvent;
 import byteware.module.Module;
 import byteware.module.ModuleCategory;
+import byteware.setting.settings.BooleanSetting;
+import byteware.setting.settings.DoubleSetting;
+import byteware.setting.settings.IntegerSetting;
+import byteware.setting.settings.ListSetting;
+import byteware.util.misc.MouseUtil;
+import byteware.util.player.ChatUtil;
+import net.lenni0451.asmevents.event.EventTarget;
+import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.util.MathHelper;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
+
+import java.util.Random;
+
+public class LeftClicker extends Module {
+	private final ListSetting randomizerType = new ListSetting(
+			"Randomizer Type",
+			"Random",
+			"Random",
+			"Gaussian",
+			"Constant"
+	);
+
+	private final IntegerSetting minCps = new IntegerSetting(
+			"Min CPS",
+			16,
+			1,
+			100,
+			1,
+			() -> !randomizerType.value.equals("Constant")
+	);
+
+	private final IntegerSetting maxCps = new IntegerSetting(
+			"Max CPS",
+			18,
+			1,
+			100,
+			1,
+			() -> !randomizerType.value.equals("Constant")
+	);
+
+	private final IntegerSetting cps = new IntegerSetting(
+			"CPS",
+			18,
+			1,
+			100,
+			1,
+			() -> randomizerType.value.equals("Constant")
+	);
+
+	private final BooleanSetting reverse = new BooleanSetting(
+			"Max Values",
+			false,
+			() -> randomizerType.value.equals("Gaussian")
+	);
+
+	private Random random;
+	private long lastMs;
+	private boolean holding;
+
+	public LeftClicker() {
+		super("Left Clicker", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
+	}
+
+	@Override
+	public void onEnable() {
+		random = new Random();
+	}
+
+	@Override
+	public void onDisable() {
+		lastMs = 0;
+		random = null;
+
+		if (holding) {
+			KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), false);
+
+			holding = false;
+		}
+	}
+
+	@EventTarget(noParamEvents = GameLoopEvent.class)
+	public void onGameLoop() {
+		if (mc.theWorld == null || mc.thePlayer == null)
+			return;
+
+		if (mc.currentScreen != null)
+			return;
+
+		long delay = 0;
+		int attackKey = mc.gameSettings.keyBindAttack.getKeyCode();
+
+		switch (randomizerType.value) {
+			case "Random":
+				delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * random.nextDouble()));
+				break;
+			case "Gaussian":
+				final double factor = reverse.value ? (1 - MathHelper.clamp_double(0.5 + random.nextGaussian() * 0.15, 0, 1)) : MathHelper.clamp_double(0.5 + random.nextGaussian() * 0.15, 0, 1);
+				delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * (factor)));
+				break;
+			case "Constant":
+				delay = (long) 1000 / cps.value;
+				break;
+		}
+
+		final long currTime = System.currentTimeMillis();
+
+		if (holding) {
+			KeyBinding.setKeyBindState(attackKey, false);
+			MouseUtil.setButtonState(attackKey + 100, false);
+
+			holding = false;
+			return;
+		}
+
+		if (!Mouse.isButtonDown(attackKey + 100) || (currTime - lastMs < delay))
+			return;
+
+		KeyBinding.setKeyBindState(attackKey, true);
+		KeyBinding.onTick(attackKey);
+
+		MouseUtil.setButtonState(attackKey + 100, true);
+
+		lastMs = currTime;
+		holding = true;
+	}
+}
+
+
+/*
+
+CLICKER:
+
+package byteware.module.modules.combat;
+
+import byteware.event.client.GameLoopEvent;
+import byteware.module.Module;
+import byteware.module.ModuleCategory;
 import byteware.setting.settings.DoubleSetting;
 import byteware.setting.settings.IntegerSetting;
 import byteware.setting.settings.ListSetting;
@@ -139,4 +277,4 @@ public class LeftClicker extends Module {
 			}
 		}
 	}
-}
+}*/
