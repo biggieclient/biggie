@@ -40,6 +40,7 @@ public class ArrayListModule extends Module {
 		final ArrayList<Module> enabledModules = (ArrayList<Module>) ModuleManager.MODULES
 				.parallelStream()
 				.filter(Module::isEnabled)
+				.sorted((e1, e2) -> e2.name.length() - e1.name.length())
 				.collect(Collectors.toList());
 		int offsetY = posY.value;
 
@@ -49,21 +50,21 @@ public class ArrayListModule extends Module {
 
 				Gui.drawRect(
 						posX.value,
-						offsetY + 1,
+						offsetY,
 						posX.value + rectWidth,
-						offsetY + mc.fontRendererObj.FONT_HEIGHT + 2,
-						new Color(0, 0, 0, 100).getRGB()
+						offsetY + mc.fontRendererObj.FONT_HEIGHT + 5,
+						new Color(0, 0, 0, 102).getRGB()
 				);
 			}
 
 			mc.fontRendererObj.drawStringWithShadow(
 					module.name,
 					posX.value + 1,
-					offsetY,
+					offsetY + 3,
 					-1
 			);
 
-			offsetY += mc.fontRendererObj.FONT_HEIGHT + 2;
+			offsetY += mc.fontRendererObj.FONT_HEIGHT + 5;
 		}
 	}
 }
