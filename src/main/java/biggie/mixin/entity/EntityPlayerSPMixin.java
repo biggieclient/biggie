@@ -136,15 +136,19 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 		if (this.isCurrentViewEntity()) {
 			EventManager.call(preMotionEvent);
 
-			this.rotationYawHead = preMotionEvent.yaw;
-			ServerRotation.YAW = preMotionEvent.yaw;
-			ServerRotation.PITCH = preMotionEvent.pitch;
+			ServerRotation.LAST_TICK_YAW = ServerRotation.DEST_YAW;
+			ServerRotation.LAST_TICK_PITCH = ServerRotation.DEST_PITCH;
+
+			ServerRotation.DEST_YAW = preMotionEvent.yaw;
+			ServerRotation.DEST_PITCH = preMotionEvent.pitch;
 
 			double diffX = preMotionEvent.x - this.lastReportedPosX;
 			double diffY = preMotionEvent.y - this.lastReportedPosY;
 			double diffZ = preMotionEvent.z - this.lastReportedPosZ;
+
 			double diffYaw = preMotionEvent.yaw - this.lastReportedYaw;
 			double diffPitch = preMotionEvent.pitch - this.lastReportedPitch;
+
 			boolean move = diffX * diffX + diffY * diffY + diffZ * diffZ > 9.0E-4D || this.positionUpdateTicks >= 20;
 			boolean rotation = diffYaw != 0.0D || diffPitch != 0.0D;
 
@@ -160,7 +164,6 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 				}
 			} else {
 				this.sendQueue.addToSendQueue(new C03PacketPlayer.C06PacketPlayerPosLook(this.motionX, -999.0D, this.motionZ, preMotionEvent.yaw, preMotionEvent.pitch, preMotionEvent.onGround));
-
 				move = false;
 			}
 

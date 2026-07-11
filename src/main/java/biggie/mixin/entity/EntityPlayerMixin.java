@@ -28,7 +28,8 @@ public abstract class EntityPlayerMixin extends EntityLivingBase {
 	@Inject(
 			method = "getBreakSpeed",
 			at = @At("RETURN"),
-			cancellable = true
+			cancellable = true,
+			remap = false
 	)
 	public void getBreakSpeed_removeBreakSlow(IBlockState state, BlockPos pos, CallbackInfoReturnable<Float> cir) {
 		float breakSpeed = cir.getReturnValue();

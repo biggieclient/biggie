@@ -11,10 +11,10 @@ public class RotationUtil {
 
         final double dist = Math.sqrt((relX * relX) + (relZ * relZ));
 
-        final float yaw = MathHelper.wrapAngleTo180_float((float) Math.toDegrees(Math.atan2(relZ, relX)));
+        final float yaw = MathHelper.wrapAngleTo180_float((float) Math.toDegrees(Math.atan2(relZ, relX))) - 90;
         final float pitch = -MathHelper.wrapAngleTo180_float((float) Math.toDegrees(Math.atan2(relY, dist)));
 
-        return new float[] { yaw - 90, pitch };
+        return new float[] { yaw, pitch };
     }
 
     public static double rayCastToBoundingBox(
