@@ -1,7 +1,7 @@
 buildscript {
     repositories {
         mavenCentral()
-        maven { url = 'http://files.minecraftforge.net/maven' }
+        maven { url = 'https://files.minecraftforge.net/maven' }
         maven { url = 'https://repo.spongepowered.org/maven' }
     }
     dependencies {
@@ -17,7 +17,6 @@ version = "1.0"
 group = "biggie"
 archivesBaseName = "biggie"
 
-sourceCompatibility = targetCompatibility = '1.8'
 compileJava {
     sourceCompatibility = targetCompatibility = '1.8'
 }
@@ -64,7 +63,7 @@ processResources {
 
 sourceSets {
     main {
-        refMap = 'refmap.biggie.json'
+        ext.refmap = 'refmap.biggie.json'
     }
 }
 

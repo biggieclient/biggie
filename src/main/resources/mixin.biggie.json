@@ -1,7 +1,7 @@
 {
   "minVersion": "0.7",
   "required": true,
-  "package": "byteware.mixin",
+  "package": "biggie.mixin",
   "refmap": "refmap.biggie.json",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
@@ -10,9 +10,9 @@
 	"network.NetworkManagerMixin"
   ],
   "client": [
-	"entity.EntityPlayerSPMixin",
 	"client.MinecraftMixin",
 	"client.PlayerControllerMPMixin",
+	"entity.EntityPlayerSPMixin",
 	"render.GuiInGameMixin"
   ],
   "injectors": {
