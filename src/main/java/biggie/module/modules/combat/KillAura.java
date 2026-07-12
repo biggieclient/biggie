@@ -1,7 +1,8 @@
 package biggie.module.modules.combat;
 
-import biggie.event.client.GameLoopEvent;
 import biggie.event.motion.MotionEvent;
+import biggie.event.motion.StrafeEvent;
+import biggie.event.render.Render2DEvent;
 import biggie.event.render.Render3DEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
@@ -16,7 +17,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemSword;
-import net.minecraft.network.play.client.C02PacketUseEntity;
 import net.minecraft.network.play.client.C07PacketPlayerDigging;
 import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.util.AxisAlignedBB;
@@ -51,8 +51,10 @@ public class KillAura extends Module {
 
 	private int targetIndex = 0;
 
-	private float yaw = Float.NaN;
-	private float pitch = Float.NaN;
+	private float yaw = 0;
+	private float pitch = 0;
+	private float lastYaw = 0;
+	private float lastPitch = 0;
 
 	final List<EntityLivingBase> targetList = new ArrayList<>();
 	private EntityLivingBase target = null;
@@ -75,12 +77,18 @@ public class KillAura extends Module {
 			mc.getNetHandler().addToSendQueue(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, new BlockPos(0, 0, 0), EnumFacing.DOWN));
 			blocking = false;
 		}
+
+		yaw = 0;
+		pitch = 0;
+		lastYaw = 0;
+		lastPitch = 0;
 	}
 
 	@EventTarget
 	public void onRender3D(Render3DEvent event) {
-		if (target == null || !drawBox.value)
+		if (target == null || !drawBox.value) {
 			return;
+		}
 
 		final AxisAlignedBB box = target.getEntityBoundingBox();
 		final AxisAlignedBB lastBox = RenderUtil.getLastTickBoundingBox(target);
@@ -96,15 +104,19 @@ public class KillAura extends Module {
 
 	@EventTarget
 	public void onMotion(MotionEvent event) {
-		if (event.getType() != EnumEventType.PRE)
+		if (event.getType() != EnumEventType.PRE) {
 			return;
+		}
 
-		if (!Float.isNaN(yaw) && !Float.isNaN(pitch)) {
-			event.yaw = this.yaw;
-			event.pitch = this.pitch;
+		if (target != null) {
+			float sensibility = mc.gameSettings.mouseSensitivity * 0.6F + 0.2F;
+			float gcdPatch = sensibility * sensibility * sensibility * 8.0F;
 
-			this.yaw = Float.NaN;
-			this.pitch = Float.NaN;
+			event.yaw = lastYaw + (yaw - lastYaw) * gcdPatch;
+			event.pitch = lastPitch + (pitch - lastPitch) * gcdPatch;
+
+			lastYaw = yaw;
+			lastPitch = pitch;
 		}
 
 		final long currTime = System.currentTimeMillis();
@@ -118,11 +130,13 @@ public class KillAura extends Module {
 
 			final EntityLivingBase en = (EntityLivingBase) entity;
 
-			if (en.deathTime != 0)
+			if (en.deathTime != 0) {
 				continue;
+			}
 
-			if (en == mc.thePlayer)
+			if (en == mc.thePlayer) {
 				continue;
+			}
 
 			final double sqDist = mc.thePlayer.getDistanceSqToEntity(en);
 
@@ -138,8 +152,9 @@ public class KillAura extends Module {
 
 			final double patchedMaxDist = useHitbox.value ? (attackDist.value + 1) : attackDist.value;
 
-			if (sqDist > (patchedMaxDist * patchedMaxDist))
+			if (sqDist > (patchedMaxDist * patchedMaxDist)) {
 				continue;
+			}
 
 			targetList.add(en);
 		}
@@ -173,25 +188,33 @@ public class KillAura extends Module {
 		targetList.clear();
 	}
 
-	// WARNING: Nós poderiamos só fazer tudo isso no motion event, porém
-	// o cps maximo só poderia ser 20 pra baixo.
 	@EventTarget
-	public void onGameLoop(GameLoopEvent event) {
-		if (mc.theWorld == null || mc.thePlayer == null)
+	public void onStrafe(StrafeEvent event) {
+		if (target != null) {
+			event.yaw = yaw;
+		}
+	}
+
+	@EventTarget(noParamEvents = Render2DEvent.class)
+	public void onRender2D() {
+		if (mc.theWorld == null || mc.thePlayer == null) {
 			return;
+		}
 
 		final long currTime = System.currentTimeMillis();
 
 		final boolean canAttack = (currTime - lastAttack) > (1000.0 / aps.value);
 
-		if (target == null)
+		if (target == null) {
 			return;
+		}
 
 		final float[] rots = RotationUtil.getRotationTo(mc.thePlayer, target.posX, target.posY + (target.getEyeHeight() * 0.5), target.posZ);
 		final AxisAlignedBB box = target.getEntityBoundingBox();
 
-		if (box == null)
+		if (box == null) {
 			return;
+		}
 
 		if (useHitbox.value) {
 			double dist = RotationUtil.rayCastToBoundingBox(
@@ -202,20 +225,24 @@ public class KillAura extends Module {
 					rots[0], rots[1]
 			);
 
-			if (dist < 0 || dist > attackDist.value)
+			if (dist < 0 || dist > attackDist.value) {
 				return;
+			}
 		}
 
 		yaw = rots[0];
 		pitch = rots[1];
 
-		if (!canAttack)
+		if (!canAttack) {
 			return;
+		}
 
-		if (swing.value)
+		if (swing.value) {
 			mc.thePlayer.swingItem();
+		}
 
-		mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(target, C02PacketUseEntity.Action.ATTACK));
+		mc.playerController.attackEntity(mc.thePlayer, target);
+
 		lastAttack = currTime;
 	}
 }
