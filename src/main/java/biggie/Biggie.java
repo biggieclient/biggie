@@ -2,6 +2,7 @@ package biggie;
 
 import biggie.manager.ModuleManager;
 import biggie.util.render.ServerRotation;
+import org.lwjgl.opengl.GL11;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

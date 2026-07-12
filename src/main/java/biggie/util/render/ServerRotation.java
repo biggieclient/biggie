@@ -14,7 +14,7 @@ public class ServerRotation {
 
 	public static boolean ROTATE_BODY = false;
 
-	private static Timer timer = null;
+	public static Timer timer = null;
 
 	public static void setup() {
 		timer = ReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), "timer");

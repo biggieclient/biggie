@@ -3,6 +3,7 @@ package biggie.module;
 import biggie.setting.Setting;
 import net.lenni0451.asmevents.EventManager;
 import net.minecraft.client.Minecraft;
+import net.minecraftforge.common.MinecraftForge;
 
 import java.util.ArrayList;
 import java.util.Arrays;
