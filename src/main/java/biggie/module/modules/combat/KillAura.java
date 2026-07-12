@@ -2,7 +2,6 @@ package biggie.module.modules.combat;
 
 import biggie.event.client.GameLoopEvent;
 import biggie.event.motion.MotionEvent;
-import biggie.event.render.Render2DEvent;
 import biggie.event.render.Render3DEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
@@ -13,7 +12,6 @@ import biggie.util.player.RotationUtil;
 import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -24,10 +22,7 @@ import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
-import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 
 import java.util.ArrayList;
@@ -63,7 +58,7 @@ public class KillAura extends Module {
 	private EntityLivingBase target = null;
 
 	public KillAura() {
-		super("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R);
+		super("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
 	}
 
 	@Override
@@ -95,7 +90,6 @@ public class KillAura extends Module {
 				box.maxX, box.maxY, box.maxZ,
 				lastBox.minX, lastBox.minY, lastBox.minZ,
 				lastBox.maxX, lastBox.maxY, lastBox.maxZ,
-				false, false,
 				0, 255, 0, 63
 		);
 	}

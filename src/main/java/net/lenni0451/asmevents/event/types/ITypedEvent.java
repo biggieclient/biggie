@@ -8,6 +8,6 @@ import net.lenni0451.asmevents.event.enums.EnumEventType;
  */
 public interface ITypedEvent extends IEvent {
 
-    EnumEventType getType();
+	EnumEventType getType();
 
 }

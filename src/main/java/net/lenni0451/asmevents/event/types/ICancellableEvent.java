@@ -7,8 +7,8 @@ import net.lenni0451.asmevents.event.IEvent;
  */
 public interface ICancellableEvent extends IEvent {
 
-    boolean isCancelled();
+	boolean isCancelled();
 
-    void setCancelled(final boolean cancelled);
+	void setCancelled(final boolean cancelled);
 
 }

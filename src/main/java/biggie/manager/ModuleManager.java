@@ -3,9 +3,14 @@ package biggie.manager;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.module.modules.combat.*;
-import biggie.module.modules.misc.*;
-import biggie.module.modules.movement.*;
-import biggie.module.modules.render.*;
+import biggie.module.modules.misc.FastMine;
+import biggie.module.modules.misc.NoBlockHitDelay;
+import biggie.module.modules.misc.NoBreakSlow;
+import biggie.module.modules.movement.NoItemSlow;
+import biggie.module.modules.movement.Speed;
+import biggie.module.modules.movement.Sprint;
+import biggie.module.modules.render.ArrayListModule;
+import biggie.module.modules.render.ClickGuiModule;
 import biggie.setting.Setting;
 
 import java.lang.reflect.Field;
@@ -21,6 +26,7 @@ public class ModuleManager {
 				// combat modules
 				new Backtrack(),
 				new KillAura(),
+				new LagRange(),
 				new LeftClicker(),
 				new MoreKB(),
 				new NoHitDelay(),

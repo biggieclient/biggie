@@ -7,7 +7,6 @@ import biggie.module.ModuleCategory;
 import biggie.setting.settings.ListSetting;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
-import net.minecraft.client.settings.KeyBinding;
 import org.lwjgl.input.Keyboard;
 
 public class MoreKB extends Module {

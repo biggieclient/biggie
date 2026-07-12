@@ -7,7 +7,8 @@ import java.util.List;
 
 public interface IEventPipeline {
 
-    void call(IEvent event);
-    void setFields(IErrorListener errorListener, List callers);
+	void call(IEvent event);
+
+	void setFields(IErrorListener errorListener, List callers);
 
 }

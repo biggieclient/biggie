@@ -1,6 +1,5 @@
 package biggie.module.modules.movement;
 
-import biggie.event.client.TickEvent;
 import biggie.event.motion.LivingUpdateEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
@@ -11,16 +10,16 @@ import net.lenni0451.asmevents.event.enums.EnumEventType;
 import org.lwjgl.input.Keyboard;
 
 public class Speed extends Module {
-    public Speed() {
-        super("Speed", ModuleCategory.MOVEMENT, Keyboard.KEY_NONE);
-    }
+	public Speed() {
+		super("Speed", ModuleCategory.MOVEMENT, Keyboard.KEY_NONE);
+	}
 
-    private final ListSetting mode = new ListSetting("Mode", "Strafe", "Strafe");
-    private final DoubleSetting speed = new DoubleSetting("Blocks P/ Tick", 0.2, 0.1, 1, 0.1);
-    private final DoubleSetting jumpMotion = new DoubleSetting("Jump Motion", 0.42, 0.01, 1, 0.01);
+	private final ListSetting mode = new ListSetting("Mode", "Strafe", "Strafe");
+	private final DoubleSetting speed = new DoubleSetting("Blocks P/ Tick", 0.2, 0.1, 1, 0.1);
+	private final DoubleSetting jumpMotion = new DoubleSetting("Jump Motion", 0.42, 0.01, 1, 0.01);
 
-    @EventTarget
-    public void onTick(LivingUpdateEvent event) {
+	@EventTarget
+	public void onTick(LivingUpdateEvent event) {
 		if (event.getType() == EnumEventType.PRE) {
 			if (mc.thePlayer == null || mc.theWorld == null)
 				return;

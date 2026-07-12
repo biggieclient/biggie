@@ -3,7 +3,6 @@ package biggie.module;
 import biggie.setting.Setting;
 import net.lenni0451.asmevents.EventManager;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.common.MinecraftForge;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,9 +45,11 @@ public class Module {
 		this.settings.addAll(Arrays.asList(settings));
 	}
 
-	public void onEnable() {}
+	public void onEnable() {
+	}
 
-	public void onDisable() {}
+	public void onDisable() {
+	}
 
 	public void toggle() {
 		setEnabled(!enabled);
