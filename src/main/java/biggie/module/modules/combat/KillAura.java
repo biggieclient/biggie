@@ -1,8 +1,8 @@
 package biggie.module.modules.combat;
 
+import biggie.event.motion.LivingUpdateEvent;
 import biggie.event.motion.MotionEvent;
 import biggie.event.motion.StrafeEvent;
-import biggie.event.render.Render2DEvent;
 import biggie.event.render.Render3DEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
@@ -51,10 +51,12 @@ public class KillAura extends Module {
 
 	private int targetIndex = 0;
 
-	private float yaw = 0;
-	private float pitch = 0;
-	private float lastYaw = 0;
-	private float lastPitch = 0;
+	// WARNING: Usar NaN pra evitar packets invalidos ou coisa pior :)
+	private float yaw = Float.NaN;
+	private float pitch = Float.NaN;
+
+	private float lastYaw = Float.NaN;
+	private float lastPitch = Float.NaN;
 
 	final List<EntityLivingBase> targetList = new ArrayList<>();
 	private EntityLivingBase target = null;
@@ -78,14 +80,15 @@ public class KillAura extends Module {
 			blocking = false;
 		}
 
-		yaw = 0;
-		pitch = 0;
-		lastYaw = 0;
-		lastPitch = 0;
+		lastYaw = Float.NaN;
+		lastPitch = Float.NaN;
+
+		yaw = Float.NaN;
+		pitch = Float.NaN;
 	}
 
-	@EventTarget
-	public void onRender3D(Render3DEvent event) {
+	@EventTarget(noParamEvents = Render3DEvent.class)
+	public void onRender3D() {
 		if (target == null || !drawBox.value) {
 			return;
 		}
@@ -102,22 +105,14 @@ public class KillAura extends Module {
 		);
 	}
 
+	// WARNING: Deixa tudo isso no LivingUpdateEvent (PRE), ja que o yaw do strafe event
+	// PRECISA e DEVE usar o mesmo yaw que o do motion event.
+	// caso o strafe event usasse o yaw do motion event ele usaria o yaw do tick anterior ja
+	// que o strafe event é chamado ANTES do motion event.
 	@EventTarget
-	public void onMotion(MotionEvent event) {
-		if (event.getType() != EnumEventType.PRE) {
+	public void onLivingUpdate(LivingUpdateEvent event) {
+		if (event.getType() != EnumEventType.PRE)
 			return;
-		}
-
-		if (target != null) {
-			float sensibility = mc.gameSettings.mouseSensitivity * 0.6F + 0.2F;
-			float gcdPatch = sensibility * sensibility * sensibility * 8.0F;
-
-			event.yaw = lastYaw + (yaw - lastYaw) * gcdPatch;
-			event.pitch = lastPitch + (pitch - lastPitch) * gcdPatch;
-
-			lastYaw = yaw;
-			lastPitch = pitch;
-		}
 
 		final long currTime = System.currentTimeMillis();
 		final boolean canCheckBlock = !(mc.thePlayer.getHeldItem() == null || mc.thePlayer.getHeldItem().getItem() == null) && mc.thePlayer.getHeldItem().getItem() instanceof ItemSword && !blockMode.value.equals("None");
@@ -166,6 +161,12 @@ public class KillAura extends Module {
 		}
 
 		if (targetList.isEmpty()) {
+			lastYaw = Float.NaN;
+			lastPitch = Float.NaN;
+
+			yaw = Float.NaN;
+			pitch = Float.NaN;
+
 			target = null;
 			return;
 		}
@@ -186,35 +187,28 @@ public class KillAura extends Module {
 		}
 
 		targetList.clear();
-	}
-
-	@EventTarget
-	public void onStrafe(StrafeEvent event) {
-		if (target != null) {
-			event.yaw = yaw;
-		}
-	}
-
-	@EventTarget(noParamEvents = Render2DEvent.class)
-	public void onRender2D() {
-		if (mc.theWorld == null || mc.thePlayer == null) {
-			return;
-		}
-
-		final long currTime = System.currentTimeMillis();
 
 		final boolean canAttack = (currTime - lastAttack) > (1000.0 / aps.value);
 
-		if (target == null) {
+		if (target == null)
 			return;
-		}
 
-		final float[] rots = RotationUtil.getRotationTo(mc.thePlayer, target.posX, target.posY + (target.getEyeHeight() * 0.5), target.posZ);
+		final float[] rots = RotationUtil.getRotationTo(mc.thePlayer, target.posX, target.posY + (target.getEyeHeight() * 0.7), target.posZ);
 		final AxisAlignedBB box = target.getEntityBoundingBox();
 
-		if (box == null) {
+		if (box == null)
 			return;
-		}
+
+		final float fixedLastYaw = (Float.isNaN(lastYaw)) ? mc.thePlayer.rotationYaw : lastYaw;
+		final float fixedLastPitch = (Float.isNaN(lastPitch)) ? mc.thePlayer.rotationPitch : lastPitch;
+
+		final float sensibility = mc.gameSettings.mouseSensitivity * 0.6f + 0.2f;
+		final float gcdPatch = (sensibility * sensibility * sensibility) * 8.0f;
+
+		final float deltaYaw = (((rots[0] - fixedLastYaw) + 180.0f) % 360.0f + 360.0f) % 360.0f - 180.0f;
+
+		final float fixedDeltaYaw = Math.round(deltaYaw / gcdPatch) * gcdPatch;
+		final float fixedDeltaPitch = Math.round((rots[1] - fixedLastPitch) / gcdPatch) * gcdPatch;
 
 		if (useHitbox.value) {
 			double dist = RotationUtil.rayCastToBoundingBox(
@@ -222,7 +216,7 @@ public class KillAura extends Module {
 					box.minX, box.maxX,
 					box.minY, box.maxY,
 					box.minZ, box.maxZ,
-					rots[0], rots[1]
+					fixedLastYaw + fixedDeltaYaw, fixedLastPitch + fixedDeltaPitch
 			);
 
 			if (dist < 0 || dist > attackDist.value) {
@@ -230,19 +224,40 @@ public class KillAura extends Module {
 			}
 		}
 
-		yaw = rots[0];
-		pitch = rots[1];
+		yaw = fixedLastYaw + fixedDeltaYaw;
+		pitch = fixedLastPitch + fixedDeltaPitch;
 
-		if (!canAttack) {
+		lastYaw = fixedLastYaw + fixedDeltaYaw;
+		lastPitch = fixedLastPitch + fixedDeltaPitch;
+
+		if (!canAttack)
 			return;
-		}
 
-		if (swing.value) {
+		if (swing.value)
 			mc.thePlayer.swingItem();
-		}
 
 		mc.playerController.attackEntity(mc.thePlayer, target);
-
 		lastAttack = currTime;
+	}
+
+	// TODO: Fazer o método jump usar o yaw das rots.
+	@EventTarget
+	public void onMotion(MotionEvent event) {
+		if (event.getType() != EnumEventType.PRE)
+			return;
+
+		if (target == null || Float.isNaN(yaw) || Float.isNaN(pitch))
+			return;
+
+		event.yaw = yaw;
+		event.pitch = pitch;
+	}
+
+	@EventTarget
+	public void onStrafe(StrafeEvent event) {
+		if (target == null || Float.isNaN(yaw))
+			return;
+
+		event.yaw = yaw;
 	}
 }

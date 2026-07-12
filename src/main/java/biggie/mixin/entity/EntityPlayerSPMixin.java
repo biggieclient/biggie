@@ -103,6 +103,7 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 	public void onUpdateWalkingPlayer_rewrite(CallbackInfo ci) {
 		boolean sprinting = this.isSprinting();
 		boolean sneaking = this.isSneaking();
+
 		MotionEvent preMotionEvent = new MotionEvent(
 				EnumEventType.PRE,
 				this.posX,
@@ -182,7 +183,7 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 			}
 
 			EventManager.call(new MotionEvent(
-					EnumEventType.PRE,
+					EnumEventType.POST,
 					this.posX,
 					this.getEntityBoundingBox().minY,
 					this.posZ,

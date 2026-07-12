@@ -17,7 +17,7 @@ public class ServerRotation {
 	public static Timer timer = null;
 
 	public static void setup() {
-		timer = ReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), "timer");
+		timer = ReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), "timer", "field_71428_T");
 	}
 
 	public static float interpYaw(final float destYaw, final float lastTickYaw) {

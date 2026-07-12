@@ -6,9 +6,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(MouseEvent.class)
 public interface MouseEventAccessor {
-	@Accessor("button")
+	@Accessor(value = "button", remap = false)
 	void setButton(int button);
 
-	@Accessor("buttonstate")
+	@Accessor(value = "buttonstate", remap = false)
 	void setButtonState(boolean buttonState);
 }

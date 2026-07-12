@@ -63,10 +63,14 @@ public class EntityMixin {
 				f = friction / f;
 				strafe = strafe * f;
 				forward = forward * f;
-				float f1 = MathHelper.sin(yaw * (float)Math.PI / 180.0F);
-				float f2 = MathHelper.cos(yaw * (float)Math.PI / 180.0F);
-				this.motionX += strafe * f2 - forward * f1;
-				this.motionZ += forward * f2 + strafe * f1;
+
+				final float yawRad = (float) Math.toRadians(yaw);
+
+				final float f1 = (float) Math.sin(yawRad);
+				final float f2 = (float) Math.cos(yawRad);
+
+				this.motionX += (-f1 * forward) + (f2 * strafe);
+				this.motionZ += (f2 * forward) + (f1 * strafe);
 			}
 
 			ci.cancel();

@@ -4,28 +4,38 @@ import biggie.event.client.AttackEvent;
 import biggie.event.client.LoadWorldEvent;
 import biggie.event.client.TickEvent;
 import biggie.event.network.ReceivePacketEvent;
+import biggie.event.render.Render3DEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
+import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.IntegerSetting;
 import biggie.util.network.PacketUtil;
+import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventPriority;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.*;
+import net.minecraft.network.status.server.S01PacketPong;
+import net.minecraft.util.AxisAlignedBB;
 import org.lwjgl.input.Keyboard;
 
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.*;
 
 public class Backtrack extends Module {
+	// INFO: Pode ser util em alguns servers, quais? não sei!
+	private final BooleanSetting cancelPong = new BooleanSetting("Cancel Pong", false);
+
 	private final IntegerSetting delay = new IntegerSetting("Delay", 100, 10, 1000, 1);
 
-	private final CopyOnWriteArrayList<Packet<?>> packets = new CopyOnWriteArrayList<>();
-	private EntityPlayer target = null;
+	private final List<PacketData> packets = new ArrayList<>();
+	private EntityLivingBase target = null;
 
-	private long lastMs = 0;
+	private final LinkedHashMap<EntityLivingBase, PosData> posCache = new LinkedHashMap<>();
+
+	private long lastAttack = 0;
 
 	public Backtrack() {
 		super("Backtrack", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
@@ -34,21 +44,15 @@ public class Backtrack extends Module {
 	@Override
 	public void onDisable() {
 		target = null;
-
-		for (Packet<?> packet : packets) {
-			PacketUtil.receivePacket(packet);
-		}
-
-		packets.clear();
-
-		lastMs = 0;
+		flushPackets();
 	}
 
 	@EventTarget(priority = EnumEventPriority.HIGH)
 	public void onAttack(AttackEvent event) {
 		if (event.getType() == EnumEventType.POST) {
-			if (target == null && event.entity instanceof EntityPlayer) {
-				target = (EntityPlayer) event.entity;
+			if (event.entity instanceof EntityLivingBase) {
+				target = (EntityLivingBase) event.entity;
+				lastAttack = System.currentTimeMillis();
 			}
 		}
 	}
@@ -56,95 +60,212 @@ public class Backtrack extends Module {
 	@EventTarget(noParamEvents = LoadWorldEvent.class)
 	public void onLoadWorld() {
 		target = null;
-
-		packets.clear();
+		flushPackets();
 	}
 
 	@EventTarget
 	public void onTick(TickEvent event) {
+		final long currTime = System.currentTimeMillis();
+
+		if (target != null && currTime - lastAttack > 1000) {
+			target = null;
+			flushPackets();
+		}
+
 		if (event.getType() == EnumEventType.POST) {
 			if (target != null) {
-				if (System.currentTimeMillis() - lastMs >= delay.value) {
-					if (!packets.isEmpty()) {
-						for (Packet<?> packet : packets) {
-							PacketUtil.receivePacket(packet);
-						}
+				final Iterator<PacketData> iterator = packets.iterator();
 
-						packets.clear();
+				while (iterator.hasNext()) {
+					final PacketData data = iterator.next();
+
+					if (currTime - data.receiveTime > delay.value) {
+						PacketUtil.receivePacket(data.packet);
+						iterator.remove();
 					}
-
-					target = null;
-
-					lastMs = System.currentTimeMillis();
 				}
 			}
 		}
 	}
 
 	@EventTarget
+	public void onRender3D(Render3DEvent event) {
+		if (target == null)
+			return;
+
+		if (posCache.containsKey(target)) {
+			final PosData pos = posCache.get(target);
+
+			final float progress = (pos.posTime == 0) ? 1.0f : Math.min(1, (float) (System.currentTimeMillis() - pos.posTime) / 200.0f);
+
+			final AxisAlignedBB box = RenderUtil.getBoundingBox(pos.x, pos.y, pos.z, target.width, target.height);
+			final AxisAlignedBB lastBox = RenderUtil.getBoundingBox(pos.lastX, pos.lastY, pos.lastZ, target.width, target.height);
+
+			RenderUtil.drawBoundingBox(
+					box.minX, box.minY, box.minZ,
+					box.maxX, box.maxY, box.maxZ,
+					lastBox.minX, lastBox.minY, lastBox.minZ,
+					lastBox.maxX, lastBox.maxY, lastBox.maxZ,
+					0, 255, 0, 63, progress
+			);
+		}
+	}
+
+	@EventTarget
 	public void onReceivePacket(ReceivePacketEvent event) {
 		if (target != null) {
+			final long currTime = System.currentTimeMillis();
+
 			if (event.packet.getClass().getSimpleName().startsWith("S")) {
-				if (event.packet instanceof S14PacketEntity) {
-					Entity entity = ((S14PacketEntity) event.packet).getEntity(mc.theWorld);
-
-					if (entity == null || entity.getEntityId() != target.getEntityId()) {
-						return;
-					}
-				}
-
-				if (event.packet instanceof S12PacketEntityVelocity) {
-					if (((S12PacketEntityVelocity) event.packet).getEntityID() != target.getEntityId()) {
-						return;
-					}
-				}
-
-				if (event.packet instanceof S18PacketEntityTeleport) {
-					if (((S18PacketEntityTeleport) event.packet).getEntityId() != target.getEntityId()) {
-						return;
-					}
+				if (
+						event.packet instanceof S00PacketKeepAlive           ||
+						event.packet instanceof S3EPacketTeams               ||
+						event.packet instanceof S20PacketEntityProperties    ||
+						event.packet instanceof S0FPacketSpawnMob            ||
+						event.packet instanceof S40PacketDisconnect          ||
+						event.packet instanceof S26PacketMapChunkBulk        ||
+						event.packet instanceof S21PacketChunkData           ||
+						event.packet instanceof S3BPacketScoreboardObjective ||
+						event.packet instanceof S02PacketChat                ||
+						(event.packet instanceof S01PacketPong && !cancelPong.value)
+				) {
+					return;
 				}
 
 				if (event.packet instanceof S08PacketPlayerPosLook) {
 					target = null;
+					flushPackets();
 
-					for (Packet<?> packet : packets) {
-						PacketUtil.receivePacket(packet);
+					return;
+				}
+
+				if (event.packet instanceof S13PacketDestroyEntities) {
+					final S13PacketDestroyEntities packet = (S13PacketDestroyEntities) event.packet;
+
+					for (int id : packet.getEntityIDs()) {
+						if (id == target.getEntityId()) {
+							target = null;
+							flushPackets();
+						}
 					}
 
-					packets.clear();
-
 					return;
 				}
 
-				if (event.packet instanceof S3EPacketTeams) {
-					return;
+				if (event.packet instanceof S14PacketEntity) {
+					if (event.packet instanceof S14PacketEntity.S16PacketEntityLook)
+						return;
+
+					final S14PacketEntity packet = ((S14PacketEntity) event.packet);
+					final Entity entity = packet.getEntity(mc.theWorld);
+
+					if (!(entity instanceof EntityLivingBase)) {
+						return;
+					}
+
+					if (entity == target) {
+						final PosData data = posCache.get(entity);
+
+						final double lastX = (data == null) ? entity.posX : data.x;
+						final double lastY = (data == null) ? entity.posY : data.y;
+						final double lastZ = (data == null) ? entity.posZ : data.z;
+
+						final double posX = lastX + ((double) packet.func_149062_c() / 32.0);
+						final double posY = lastY + ((double) packet.func_149061_d() / 32.0);
+						final double posZ = lastZ + ((double) packet.func_149064_e() / 32.0);
+
+						posCache.put(
+								(EntityLivingBase) entity,
+								new PosData(
+										posX, posY, posZ,
+										lastX, lastY, lastZ,
+										currTime
+								)
+						);
+					}
 				}
 
-				if (event.packet instanceof S20PacketEntityProperties) {
-					return;
+				if (event.packet instanceof S18PacketEntityTeleport) {
+					final S18PacketEntityTeleport packet = (S18PacketEntityTeleport) event.packet;
+					final Entity entity = mc.theWorld.getEntityByID(packet.getEntityId());
+
+					if (!(entity instanceof EntityLivingBase)) {
+						return;
+					}
+
+					if (entity == target) {
+						final PosData data = posCache.get(entity);
+
+						final double lastX = (data == null) ? entity.posX : data.x;
+						final double lastY = (data == null) ? entity.posY : data.y;
+						final double lastZ = (data == null) ? entity.posZ : data.z;
+
+						final double posX = packet.getX() / 32.0;
+						final double posY = packet.getY() / 32.0;
+						final double posZ = packet.getZ() / 32.0;
+
+						posCache.put(
+								(EntityLivingBase) entity,
+								new PosData(
+										posX, posY, posZ,
+										lastX, lastY, lastZ,
+										currTime
+								)
+						);
+					}
 				}
 
-				if (event.packet instanceof S0FPacketSpawnMob) {
-					return;
-				}
-
-				if (event.packet instanceof S40PacketDisconnect) {
-					return;
-				}
-
-				if (event.packet instanceof S26PacketMapChunkBulk || event.packet instanceof S21PacketChunkData) {
-					return;
-				}
-
-				if (event.packet instanceof S3BPacketScoreboardObjective) {
-					return;
-				}
-
-				packets.add(event.packet);
-
+				packets.add(new PacketData(currTime, event.packet));
 				event.setCancelled(true);
 			}
+		}
+	}
+
+	void flushPackets() {
+		synchronized (packets) {
+			for (PacketData data : packets)
+				PacketUtil.receivePacket(data.packet);
+
+			packets.clear();
+		}
+
+		posCache.clear();
+	}
+
+	static class PacketData {
+		public final long receiveTime;
+		public final Packet<?> packet;
+
+		public PacketData(long receiveTime, Packet<?> packet) {
+			this.receiveTime = receiveTime;
+			this.packet = packet;
+		}
+	}
+
+	static class PosData {
+		public double x;
+		public double y;
+		public double z;
+
+		public double lastX;
+		public double lastY;
+		public double lastZ;
+
+		public long posTime;
+
+		public PosData(
+				double x, double y, double z,
+				double lastX, double lastY, double lastZ,
+				long posTime
+		) {
+			this.x = x;
+			this.y = y;
+			this.z = z;
+
+			this.lastX = lastX;
+			this.lastY = lastY;
+			this.lastZ = lastZ;
+			this.posTime = posTime;
 		}
 	}
 }
