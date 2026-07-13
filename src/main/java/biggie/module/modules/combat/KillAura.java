@@ -125,13 +125,11 @@ public class KillAura extends Module {
 
 			final EntityLivingBase en = (EntityLivingBase) entity;
 
-			if (en.deathTime != 0) {
+			if (en.deathTime != 0)
 				continue;
-			}
 
-			if (en == mc.thePlayer) {
+			if (en == mc.thePlayer)
 				continue;
-			}
 
 			final double sqDist = mc.thePlayer.getDistanceSqToEntity(en);
 
@@ -147,9 +145,8 @@ public class KillAura extends Module {
 
 			final double patchedMaxDist = useHitbox.value ? (attackDist.value + 1) : attackDist.value;
 
-			if (sqDist > (patchedMaxDist * patchedMaxDist)) {
+			if (sqDist > (patchedMaxDist * patchedMaxDist))
 				continue;
-			}
 
 			targetList.add(en);
 		}
@@ -176,15 +173,13 @@ public class KillAura extends Module {
 			lastSwitch = currTime;
 		}
 
-		if (targetIndex >= targetList.size()) {
+		if (targetIndex >= targetList.size())
 			targetIndex = 0;
-		}
 
-		if (rotMode.value.equals("Single")) {
+		if (rotMode.value.equals("Single"))
 			target = targetList.get(0);
-		} else if (rotMode.value.equals("Switch")) {
+		else if (rotMode.value.equals("Switch"))
 			target = targetList.get(targetIndex);
-		}
 
 		targetList.clear();
 
@@ -219,9 +214,8 @@ public class KillAura extends Module {
 					fixedLastYaw + fixedDeltaYaw, fixedLastPitch + fixedDeltaPitch
 			);
 
-			if (dist < 0 || dist > attackDist.value) {
+			if (dist < 0 || dist > attackDist.value)
 				return;
-			}
 		}
 
 		yaw = fixedLastYaw + fixedDeltaYaw;
