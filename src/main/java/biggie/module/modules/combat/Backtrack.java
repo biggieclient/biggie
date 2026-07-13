@@ -31,6 +31,9 @@ public class Backtrack extends Module {
 	private final BooleanSetting cancelKeepAlive = new BooleanSetting("Cancel Keep Alive", false);
 
 	private final IntegerSetting delay = new IntegerSetting("Delay", 100, 10, 1000, 1);
+	private final IntegerSetting targetFlushDelay = new IntegerSetting("Target Flush Delay", 100, 100, 1000, 50);
+
+	private final BooleanSetting distanceCheck = new BooleanSetting("Distance Check", true);
 
 	private final List<PacketData> packets = new ArrayList<>();
 	private EntityLivingBase target = null;
@@ -38,7 +41,6 @@ public class Backtrack extends Module {
 	private final LinkedHashMap<EntityLivingBase, PosData> posCache = new LinkedHashMap<>();
 
 	private long lastAttack = 0;
-	private long lastFlush = 0;
 
 	public Backtrack() {
 		super("Backtrack", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
@@ -70,24 +72,33 @@ public class Backtrack extends Module {
 	public void onTick(TickEvent event) {
 		final long currTime = System.currentTimeMillis();
 
-		if (target != null && (currTime - lastAttack > 300) || (currTime - lastFlush > 300)) {
+		if (target != null && (currTime - lastAttack > targetFlushDelay.value)) {
 			target = null;
 			flushPackets();
-			lastFlush = currTime;
 		}
 
-		if (event.getType() == EnumEventType.POST) {
-			if (target != null) {
-				final Iterator<PacketData> iterator = packets.iterator();
+		if (distanceCheck.value && posCache.containsKey(target)) {
+			final PosData pos = posCache.get(target);
 
-				while (iterator.hasNext()) {
-					final PacketData data = iterator.next();
+			final double cacheDist = pos.x * pos.x + pos.y * pos.y + pos.z * pos.z;
 
-					if (currTime - data.receiveTime > delay.value) {
-						PacketUtil.receivePacket(data.packet);
-						iterator.remove();
-					}
-				}
+			if (cacheDist < mc.thePlayer.getDistanceSq(target.posX, target.posY, target.posZ)) {
+				target = null;
+				flushPackets();
+			}
+		}
+
+		if (event.getType() != EnumEventType.POST || target == null)
+			return;
+
+		final Iterator<PacketData> iterator = packets.iterator();
+
+		while (iterator.hasNext()) {
+			final PacketData data = iterator.next();
+
+			if (currTime - data.receiveTime > delay.value) {
+				PacketUtil.receivePacket(data.packet);
+				iterator.remove();
 			}
 		}
 	}
@@ -117,12 +128,16 @@ public class Backtrack extends Module {
 
 	@EventTarget
 	public void onReceivePacket(ReceivePacketEvent event) {
-		if (target != null) {
-			final long currTime = System.currentTimeMillis();
+		if (target == null)
+			return;
 
-			if (event.packet.getClass().getSimpleName().startsWith("S")) {
-				if (
-						(event.packet instanceof S12PacketEntityVelocity && !cancelKnockback.value)  ||
+		final long currTime = System.currentTimeMillis();
+
+		if (!event.packet.getClass().getSimpleName().startsWith("S"))
+			return;
+
+		if (
+				(event.packet instanceof S12PacketEntityVelocity && !cancelKnockback.value)  ||
 						(event.packet instanceof S00PacketKeepAlive && !cancelKeepAlive.value)       ||
 						(event.packet instanceof S01PacketPong && !cancelPong.value)                 ||
 						event.packet instanceof S3EPacketTeams                                       ||
@@ -133,97 +148,95 @@ public class Backtrack extends Module {
 						event.packet instanceof S21PacketChunkData                                   ||
 						event.packet instanceof S3BPacketScoreboardObjective                         ||
 						event.packet instanceof S02PacketChat
-				) {
-					return;
-				}
+		) {
+			return;
+		}
 
-				if (event.packet instanceof S08PacketPlayerPosLook) {
+		if (event.packet instanceof S08PacketPlayerPosLook) {
+			target = null;
+			flushPackets();
+
+			return;
+		}
+
+		if (event.packet instanceof S13PacketDestroyEntities) {
+			final S13PacketDestroyEntities packet = (S13PacketDestroyEntities) event.packet;
+
+			for (int id : packet.getEntityIDs()) {
+				if (id == target.getEntityId()) {
 					target = null;
 					flushPackets();
-
-					return;
 				}
+			}
 
-				if (event.packet instanceof S13PacketDestroyEntities) {
-					final S13PacketDestroyEntities packet = (S13PacketDestroyEntities) event.packet;
+			return;
+		}
 
-					for (int id : packet.getEntityIDs()) {
-						if (id == target.getEntityId()) {
-							target = null;
-							flushPackets();
-						}
-					}
+		if (event.packet instanceof S14PacketEntity) {
+			if (event.packet instanceof S14PacketEntity.S16PacketEntityLook)
+				return;
 
-					return;
-				}
+			final S14PacketEntity packet = ((S14PacketEntity) event.packet);
+			final Entity entity = packet.getEntity(mc.theWorld);
 
-				if (event.packet instanceof S14PacketEntity) {
-					if (event.packet instanceof S14PacketEntity.S16PacketEntityLook)
-						return;
+			if (!(entity instanceof EntityLivingBase)) {
+				return;
+			}
 
-					final S14PacketEntity packet = ((S14PacketEntity) event.packet);
-					final Entity entity = packet.getEntity(mc.theWorld);
+			if (entity == target) {
+				final PosData data = posCache.get(entity);
 
-					if (!(entity instanceof EntityLivingBase)) {
-						return;
-					}
+				final double lastX = (data == null) ? entity.posX : data.x;
+				final double lastY = (data == null) ? entity.posY : data.y;
+				final double lastZ = (data == null) ? entity.posZ : data.z;
 
-					if (entity == target) {
-						final PosData data = posCache.get(entity);
+				final double posX = lastX + ((double) packet.func_149062_c() / 32.0);
+				final double posY = lastY + ((double) packet.func_149061_d() / 32.0);
+				final double posZ = lastZ + ((double) packet.func_149064_e() / 32.0);
 
-						final double lastX = (data == null) ? entity.posX : data.x;
-						final double lastY = (data == null) ? entity.posY : data.y;
-						final double lastZ = (data == null) ? entity.posZ : data.z;
-
-						final double posX = lastX + ((double) packet.func_149062_c() / 32.0);
-						final double posY = lastY + ((double) packet.func_149061_d() / 32.0);
-						final double posZ = lastZ + ((double) packet.func_149064_e() / 32.0);
-
-						posCache.put(
-								(EntityLivingBase) entity,
-								new PosData(
-										posX, posY, posZ,
-										lastX, lastY, lastZ,
-										currTime
-								)
-						);
-					}
-				}
-
-				if (event.packet instanceof S18PacketEntityTeleport) {
-					final S18PacketEntityTeleport packet = (S18PacketEntityTeleport) event.packet;
-					final Entity entity = mc.theWorld.getEntityByID(packet.getEntityId());
-
-					if (!(entity instanceof EntityLivingBase)) {
-						return;
-					}
-
-					if (entity == target) {
-						final PosData data = posCache.get(entity);
-
-						final double lastX = (data == null) ? entity.posX : data.x;
-						final double lastY = (data == null) ? entity.posY : data.y;
-						final double lastZ = (data == null) ? entity.posZ : data.z;
-
-						final double posX = packet.getX() / 32.0;
-						final double posY = packet.getY() / 32.0;
-						final double posZ = packet.getZ() / 32.0;
-
-						posCache.put(
-								(EntityLivingBase) entity,
-								new PosData(
-										posX, posY, posZ,
-										lastX, lastY, lastZ,
-										currTime
-								)
-						);
-					}
-				}
-
-				packets.add(new PacketData(currTime, event.packet));
-				event.setCancelled(true);
+				posCache.put(
+						(EntityLivingBase) entity,
+						new PosData(
+								posX, posY, posZ,
+								lastX, lastY, lastZ,
+								currTime
+						)
+				);
 			}
 		}
+
+		if (event.packet instanceof S18PacketEntityTeleport) {
+			final S18PacketEntityTeleport packet = (S18PacketEntityTeleport) event.packet;
+			final Entity entity = mc.theWorld.getEntityByID(packet.getEntityId());
+
+			if (!(entity instanceof EntityLivingBase)) {
+				return;
+			}
+
+			if (entity == target) {
+				final PosData data = posCache.get(entity);
+
+				final double lastX = (data == null) ? entity.posX : data.x;
+				final double lastY = (data == null) ? entity.posY : data.y;
+				final double lastZ = (data == null) ? entity.posZ : data.z;
+
+				final double posX = packet.getX() / 32.0;
+				final double posY = packet.getY() / 32.0;
+				final double posZ = packet.getZ() / 32.0;
+
+				posCache.put(
+						(EntityLivingBase) entity,
+						new PosData(
+								posX, posY, posZ,
+								lastX, lastY, lastZ,
+								currTime
+						)
+				);
+			}
+		}
+
+		packets.add(new PacketData(currTime, event.packet));
+		event.setCancelled(true);
 	}
 
 	void flushPackets() {
