@@ -38,6 +38,8 @@ public class Velocity extends Module {
 		}
 	}
 
+	// TODO: Fazer isso só pular com os pacotes reenviados do backtrack
+	//  caso ele esteja ativado, se não, fodase.
 	@EventTarget
 	public void onLivingUpdate(LivingUpdateEvent event) {
 		if (event.getType() == EnumEventType.PRE) {

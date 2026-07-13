@@ -6,6 +6,7 @@ import biggie.module.modules.combat.*;
 import biggie.module.modules.misc.FastMine;
 import biggie.module.modules.misc.NoBlockHitDelay;
 import biggie.module.modules.misc.NoBreakSlow;
+import biggie.module.modules.misc.Scaffold;
 import biggie.module.modules.movement.NoItemSlow;
 import biggie.module.modules.movement.Speed;
 import biggie.module.modules.movement.Sprint;
@@ -36,6 +37,7 @@ public class ModuleManager {
 				new NoBlockHitDelay(),
 				new NoBreakSlow(),
 				new FastMine(),
+				new Scaffold(),
 
 				// movement modules
 				new NoItemSlow(),

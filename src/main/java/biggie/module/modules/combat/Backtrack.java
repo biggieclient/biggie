@@ -27,6 +27,8 @@ import java.util.*;
 public class Backtrack extends Module {
 	// INFO: Pode ser util em alguns servers, quais? não sei!
 	private final BooleanSetting cancelPong = new BooleanSetting("Cancel Pong", false);
+	private final BooleanSetting cancelKnockback = new BooleanSetting("Cancel Knockback", false);
+	private final BooleanSetting cancelKeepAlive = new BooleanSetting("Cancel Keep Alive", false);
 
 	private final IntegerSetting delay = new IntegerSetting("Delay", 100, 10, 1000, 1);
 
@@ -36,6 +38,7 @@ public class Backtrack extends Module {
 	private final LinkedHashMap<EntityLivingBase, PosData> posCache = new LinkedHashMap<>();
 
 	private long lastAttack = 0;
+	private long lastFlush = 0;
 
 	public Backtrack() {
 		super("Backtrack", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
@@ -67,9 +70,10 @@ public class Backtrack extends Module {
 	public void onTick(TickEvent event) {
 		final long currTime = System.currentTimeMillis();
 
-		if (target != null && currTime - lastAttack > 1000) {
+		if (target != null && (currTime - lastAttack > 300) || (currTime - lastFlush > 300)) {
 			target = null;
 			flushPackets();
+			lastFlush = currTime;
 		}
 
 		if (event.getType() == EnumEventType.POST) {
@@ -118,16 +122,17 @@ public class Backtrack extends Module {
 
 			if (event.packet.getClass().getSimpleName().startsWith("S")) {
 				if (
-						event.packet instanceof S00PacketKeepAlive           ||
-						event.packet instanceof S3EPacketTeams               ||
-						event.packet instanceof S20PacketEntityProperties    ||
-						event.packet instanceof S0FPacketSpawnMob            ||
-						event.packet instanceof S40PacketDisconnect          ||
-						event.packet instanceof S26PacketMapChunkBulk        ||
-						event.packet instanceof S21PacketChunkData           ||
-						event.packet instanceof S3BPacketScoreboardObjective ||
-						event.packet instanceof S02PacketChat                ||
-						(event.packet instanceof S01PacketPong && !cancelPong.value)
+						(event.packet instanceof S12PacketEntityVelocity && !cancelKnockback.value)  ||
+						(event.packet instanceof S00PacketKeepAlive && !cancelKeepAlive.value)       ||
+						(event.packet instanceof S01PacketPong && !cancelPong.value)                 ||
+						event.packet instanceof S3EPacketTeams                                       ||
+						event.packet instanceof S20PacketEntityProperties                            ||
+						event.packet instanceof S0FPacketSpawnMob                                    ||
+						event.packet instanceof S40PacketDisconnect                                  ||
+						event.packet instanceof S26PacketMapChunkBulk                                ||
+						event.packet instanceof S21PacketChunkData                                   ||
+						event.packet instanceof S3BPacketScoreboardObjective                         ||
+						event.packet instanceof S02PacketChat
 				) {
 					return;
 				}
