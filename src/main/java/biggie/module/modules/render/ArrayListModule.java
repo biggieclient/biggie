@@ -44,15 +44,17 @@ public class ArrayListModule extends Module {
 				.collect(Collectors.toList());
 		int offsetY = posY.value;
 
-		for (Module module : enabledModules) {
+		for (int i = 0; i < enabledModules.size(); ++i) {
+			final Module module = enabledModules.get(i);
+
 			if (background.value) {
-				int rectWidth = mc.fontRendererObj.getStringWidth(module.name) + 2;
+				final int rectWidth = mc.fontRendererObj.getStringWidth(module.name) + 1;
 
 				Gui.drawRect(
 						posX.value,
-						offsetY,
+						offsetY - ((i == 0) ? 1 : 0),
 						posX.value + rectWidth,
-						offsetY + mc.fontRendererObj.FONT_HEIGHT + 5,
+						offsetY + mc.fontRendererObj.FONT_HEIGHT + 1,
 						new Color(0, 0, 0, 102).getRGB()
 				);
 			}
@@ -60,11 +62,11 @@ public class ArrayListModule extends Module {
 			mc.fontRendererObj.drawStringWithShadow(
 					module.name,
 					posX.value + 1,
-					offsetY + 3,
+					offsetY,
 					-1
 			);
 
-			offsetY += mc.fontRendererObj.FONT_HEIGHT + 5;
+			offsetY += mc.fontRendererObj.FONT_HEIGHT + 1;
 		}
 	}
 }

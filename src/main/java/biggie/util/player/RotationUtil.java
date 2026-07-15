@@ -2,6 +2,9 @@ package biggie.util.player;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.Vec3;
+import net.minecraft.world.World;
 
 public class RotationUtil {
 	public static float[] getRotationTo(EntityPlayer from, final double x, final double y, final double z) {
@@ -11,18 +14,34 @@ public class RotationUtil {
 
 		final double dist = Math.sqrt((relX * relX) + (relZ * relZ));
 
-		final float yaw = MathHelper.wrapAngleTo180_float((float) Math.toDegrees(Math.atan2(relZ, relX))) - 90;
-		final float pitch = -MathHelper.wrapAngleTo180_float((float) Math.toDegrees(Math.atan2(relY, dist)));
+		final float yaw = (float) Math.toDegrees(Math.atan2(relZ, relX)) - 90;
+		final float pitch = (float) -Math.toDegrees(Math.atan2(relY, dist));
 
-		return new float[]{yaw, pitch};
+		return new float[] { yaw, pitch };
+	}
+
+	public static MovingObjectPosition rayTrace(EntityPlayer from, World world, float yaw, float pitch, double rayDistance) {
+		final double radYaw = Math.toRadians(yaw);
+		final double radPitch = Math.toRadians(-pitch);
+
+		final double pitchFactor = Math.cos(radPitch);
+
+		final double xDir = -Math.sin(radYaw) * pitchFactor;
+		final double zDir = Math.cos(radYaw) * pitchFactor;
+		final double yDir = Math.sin(radPitch);
+
+		return world.rayTraceBlocks(
+				new Vec3(from.posX, from.posY + from.getEyeHeight(), from.posZ),
+				new Vec3(from.posX + xDir * rayDistance, from.posY + from.getEyeHeight() + yDir * rayDistance, from.posZ  + zDir * rayDistance)
+		);
 	}
 
 	public static double rayCastToBoundingBox(
 			final double startX, final double startY, final double startZ,
-			final double minX, final double maxX,
-			final double minY, final double maxY,
-			final double minZ, final double maxZ,
+			final double minX, final double minY, final double minZ,
+			final double maxX, final double maxY, final double maxZ,
 			final float yaw, final float pitch
+
 	) {
 		double relMaxX = maxX - startX;
 		double relMinX = minX - startX;
@@ -52,6 +71,7 @@ public class RotationUtil {
 			final double temp = relMinY;
 			relMinY = relMaxY;
 			relMaxY = temp;
+
 		}
 
 		if (zDir < 0) {
@@ -73,15 +93,59 @@ public class RotationUtil {
 		final double tMaxY = relMaxY * invYDir;
 		final double tMinY = relMinY * invYDir;
 
-		if ((tMinX > tMaxZ) || (tMinZ > tMaxX) || (tMinY > tMaxX) || (tMinX > tMaxY) || (tMinY > tMaxZ) || (tMinZ > tMaxY))
-			return -1;
-
 		final double minIntersect = Math.max(Math.max(tMinX, tMinZ), tMinY);
 		final double maxIntersect = Math.min(Math.min(tMaxX, tMaxZ), tMaxY);
+
+		if (minIntersect > maxIntersect)
+			return -1;
 
 		if (maxIntersect < 0)
 			return -1;
 
 		return Math.max(0, minIntersect);
+	}
+
+	// WARNING: Isso não chega a ser uma gambiarra, mas meio que isso deve gastar processamento para um caralho ja que
+	// faz um dot product pra cada combinação de movement pra achar o vetor mais parecido com o do client usando o yaw do server.
+	public static float[] getFixedMove(float clientYaw, float serverYaw, float  clientForward, float clientStrafe) {
+		if (clientForward == 0 && clientStrafe == 0)
+			return new float[] { 0, 0 };
+
+		final float serverRadYaw = (float) Math.toRadians(serverYaw);
+		final float clientRadYaw = (float) Math.toRadians(clientYaw);
+
+		float clientX = ((float) -Math.sin(clientRadYaw) * clientForward) + ((float) Math.cos(clientRadYaw) * clientStrafe);
+		float clientZ = ((float) Math.cos(clientRadYaw) * clientForward) + ((float) Math.sin(clientRadYaw) * clientStrafe);
+
+		final float clientInvSize = 1 / (float) Math.sqrt((clientX * clientX) + (clientZ * clientZ));
+
+		clientX *= clientInvSize;
+		clientZ *= clientInvSize;
+
+		float finalDot = Float.NaN;
+		float finalForward = 0;
+		float finalStrafe = 0;
+
+		for (int forward = -1; forward <= 1; ++forward) {
+			for (int strafe = -1; strafe <= 1; ++strafe) {
+				if (forward == 0 && strafe == 0)
+					continue;
+
+				final float dX = ((float) -Math.sin(serverRadYaw) * forward) + ((float) Math.cos(serverRadYaw) * strafe);
+				final float dZ = ((float) Math.cos(serverRadYaw) * forward) + ((float) Math.sin(serverRadYaw) * strafe);
+
+				final float invSize = 1 / (float) Math.sqrt((dX * dX) + (dZ * dZ));
+
+				final float currDot = ((dX * invSize) * clientX) + ((dZ * invSize) * clientZ);
+
+				if (currDot > finalDot || Double.isNaN(finalDot)) {
+					finalForward = forward;
+					finalStrafe = strafe;
+					finalDot = currDot;
+				}
+			}
+		}
+
+		return new float[] { finalForward, finalStrafe };
 	}
 }

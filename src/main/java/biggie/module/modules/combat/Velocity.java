@@ -18,7 +18,7 @@ public class Velocity extends Module {
 			"Jump"
 	);
 
-	private boolean receivedDamage = false;
+	public boolean receivedDamage = false;
 
 	public Velocity() {
 		super("Velocity", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
@@ -31,29 +31,25 @@ public class Velocity extends Module {
 
 	@EventTarget
 	public void onReceivePacket(ReceivePacketEvent event) {
-		if (event.packet instanceof S12PacketEntityVelocity) {
+		if (event.packet instanceof S12PacketEntityVelocity && !event.isCancelled()) {
 			if (((S12PacketEntityVelocity) event.packet).getEntityID() == mc.thePlayer.getEntityId()) {
 				receivedDamage = true;
 			}
 		}
 	}
 
-	// TODO: Fazer isso só pular com os pacotes reenviados do backtrack
-	//  caso ele esteja ativado, se não, fodase.
 	@EventTarget
 	public void onLivingUpdate(LivingUpdateEvent event) {
-		if (event.getType() == EnumEventType.PRE) {
-			if (receivedDamage) {
-				if (mc.gameSettings.keyBindJump.isKeyDown()) {
-					KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), false);
+		if (event.getType() != EnumEventType.PRE || !receivedDamage)
+			return;
 
-					receivedDamage = false;
+		if (mc.gameSettings.keyBindJump.isKeyDown()) {
+			KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), false);
+			receivedDamage = false;
 
-					return;
-				}
-
-				KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), true);
-			}
+			return;
 		}
+
+		KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), true);
 	}
 }

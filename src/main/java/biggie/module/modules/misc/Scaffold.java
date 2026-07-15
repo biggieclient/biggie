@@ -1,10 +1,16 @@
 package biggie.module.modules.misc;
 
+import biggie.event.client.TickEvent;
+import biggie.event.input.PostPlayerInputEvent;
+import biggie.event.motion.JumpEvent;
 import biggie.event.motion.LivingUpdateEvent;
 import biggie.event.motion.MotionEvent;
+import biggie.event.motion.StrafeEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
+import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.DoubleSetting;
+import biggie.setting.settings.ListSetting;
 import biggie.util.player.RotationUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
@@ -15,14 +21,17 @@ import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import org.lwjgl.input.Keyboard;
 
 import java.util.*;
 
 public class Scaffold extends Module {
+    private final static double MIN_RANDOM_EPS = 0.0006;
+
     // TODO: Adicionar mais métodos de search.
-    //private final ListSetting searchMode = new ListSetting("Center", "Center");
+    private final ListSetting searchMode = new ListSetting("Center", "Center", "Center", "Random");
     private final DoubleSetting placeRange = new DoubleSetting("Place Range", 4.5, 3, 8, 0.5);
 
     private float yaw = Float.NaN;
@@ -43,12 +52,21 @@ public class Scaffold extends Module {
 
     @Override
     public void onDisable() {
+        final float gcd = (float) Math.pow(mc.gameSettings.mouseSensitivity * 0.6f + 0.2f, 3f) * 1.2f;
+
+        if (!Float.isNaN(yaw)) {
+            final float deltaYaw = mc.thePlayer.rotationYaw - yaw;
+            mc.thePlayer.rotationYaw = yaw + MathHelper.wrapAngleTo180_float(Math.round(deltaYaw / gcd) * gcd);
+        }
+
+        yaw = Float.NaN;
+        pitch = Float.NaN;
         lastYaw = Float.NaN;
         lastPitch = Float.NaN;
     }
 
     @EventTarget
-    public void onLivingUpdate(LivingUpdateEvent event) {
+    public void onTick(TickEvent event) {
         if (mc.thePlayer == null || mc.theWorld == null)
             return;
 
@@ -90,7 +108,7 @@ public class Scaffold extends Module {
                     continue;
 
                 if (mc.theWorld.getBlockState(neighbor).getBlock().getMaterial().isSolid()) {
-                    final Vec3 relPos = getRelPoint(facing.getOpposite());
+                    final Vec3 relPos = getRelPoint(facing.getOpposite(), searchMode.value.equals("Random"));
                     targetBlock = new BlockData(neighbor, facing.getOpposite(), neighbor, relPos);
                     break;
                 }
@@ -102,7 +120,14 @@ public class Scaffold extends Module {
                 break;
         }
 
+        final float gcd = (float) Math.pow(mc.gameSettings.mouseSensitivity * 0.6f + 0.2f, 3f) * 1.2f;
+
         if (targetBlock == null) {
+            if (!Float.isNaN(yaw)) {
+                final float deltaYaw = mc.thePlayer.rotationYaw - yaw;
+                mc.thePlayer.rotationYaw = yaw + MathHelper.wrapAngleTo180_float(Math.round(deltaYaw / gcd) * gcd);
+            }
+
             yaw = Float.NaN;
             pitch = Float.NaN;
             lastYaw = Float.NaN;
@@ -119,16 +144,30 @@ public class Scaffold extends Module {
                 rotX, rotY, rotZ
         );
 
+        final double dX = rotX - mc.thePlayer.posX;
+        final double dY = rotY - mc.thePlayer.posY - mc.thePlayer.getEyeHeight();
+        final double dZ = rotZ - mc.thePlayer.posZ;
+
+        if (dX * dX + dY * dY + dZ * dZ > rangeSq) {
+            if (!Float.isNaN(yaw)) {
+                final float deltaYaw = mc.thePlayer.rotationYaw - yaw;
+                mc.thePlayer.rotationYaw = yaw + MathHelper.wrapAngleTo180_float(Math.round(deltaYaw / gcd) * gcd);
+            }
+
+            yaw = Float.NaN;
+            pitch = Float.NaN;
+            lastYaw = Float.NaN;
+            lastPitch = Float.NaN;
+            return;
+        }
+
         final float fixedLastYaw = (Float.isNaN(lastYaw)) ? mc.thePlayer.rotationYaw : lastYaw;
         final float fixedLastPitch = (Float.isNaN(lastPitch)) ? mc.thePlayer.rotationPitch : lastPitch;
 
-        final float sensibility = mc.gameSettings.mouseSensitivity * 0.6f + 0.2f;
-        final float gcdPatch = (sensibility * sensibility * sensibility) * 8.0f;
+        final float deltaYaw = rots[0] - fixedLastYaw;
 
-        final float deltaYaw = (((rots[0] - fixedLastYaw) + 180.0f) % 360.0f + 360.0f) % 360.0f - 180.0f;
-
-        final float fixedDeltaYaw = Math.round(deltaYaw / gcdPatch) * gcdPatch;
-        final float fixedDeltaPitch = Math.round((rots[1] - fixedLastPitch) / gcdPatch) * gcdPatch;
+        final float fixedDeltaYaw = MathHelper.wrapAngleTo180_float(Math.round(deltaYaw / gcd) * gcd);
+        final float fixedDeltaPitch = Math.round((rots[1] - fixedLastPitch) / gcd) * gcd;
 
         lastYaw = fixedLastYaw + fixedDeltaYaw;
         lastPitch = fixedLastPitch + fixedDeltaPitch;
@@ -159,7 +198,7 @@ public class Scaffold extends Module {
                 mc.thePlayer, mc.theWorld,
                 mc.thePlayer.getHeldItem(),
                 targetBlock.hitPos, targetBlock.facing,
-                targetBlock.relPos
+                new Vec3(targetBlock.relPos.xCoord + targetBlock.hitPos.getX(), targetBlock.relPos.yCoord  + targetBlock.hitPos.getY(), targetBlock.relPos.zCoord  + targetBlock.hitPos.getZ())
         )) {
             mc.thePlayer.swingItem();
         }
@@ -177,20 +216,61 @@ public class Scaffold extends Module {
         event.pitch = pitch;
     }
 
-    Vec3 getRelPoint(EnumFacing facing) {
-        if (facing == EnumFacing.WEST) {
-            return new Vec3(0, 0.5, 0.5);
-        } else if (facing == EnumFacing.EAST) {
-            return new Vec3(1, 0.5, 0.5);
-        } else if (facing == EnumFacing.NORTH) {
-            return new Vec3(0.5, 0.5, 1);
-        } else if (facing == EnumFacing.SOUTH) {
-            return new Vec3(0.5, 0.5, 0);
-        } else if (facing == EnumFacing.UP) {
-            return new Vec3(0.5, 1, 0.5);
-        }
+    @EventTarget
+    public void onJump(JumpEvent event) {
+        if (Float.isNaN(yaw) || Float.isNaN(pitch))
+            return;
 
-        return null;
+        event.yaw = yaw;
+    }
+
+    @EventTarget
+    public void onPostPlayerInput(PostPlayerInputEvent event) {
+        if (Float.isNaN(yaw) || Float.isNaN(pitch))
+            return;
+
+        final float[] fixedMove = RotationUtil.getFixedMove(
+                mc.thePlayer.rotationYaw, yaw,
+                mc.thePlayer.movementInput.moveForward, mc.thePlayer.movementInput.moveStrafe
+        );
+
+        event.moveForward = fixedMove[0];
+        event.moveStrafe = fixedMove[1];
+    }
+
+    @EventTarget
+    public void onStrafe(StrafeEvent event) {
+        if (Float.isNaN(yaw))
+            return;
+
+        event.yaw = yaw;
+    }
+
+    Vec3 getRelPoint(EnumFacing facing, boolean randomize) {
+        if (facing == null)
+            return new Vec3(0.5, 0.5, 0.5);
+
+        final double minRandom = randomize ? Math.random() * MIN_RANDOM_EPS : 0;
+
+        final double centerRandom1 = randomize ? 0.5 + (-MIN_RANDOM_EPS + Math.random() * (MIN_RANDOM_EPS * 2)) : 0.5;
+        final double centerRandom2 = randomize ? 0.5 + (-MIN_RANDOM_EPS + Math.random() * (MIN_RANDOM_EPS * 2)) : 0.5;
+
+        switch (facing) {
+            case WEST:
+                return new Vec3(minRandom, centerRandom1, centerRandom2);
+            case EAST:
+                return new Vec3(1 - minRandom, centerRandom1, centerRandom2);
+            case NORTH:
+                return new Vec3(centerRandom1, centerRandom2, minRandom);
+            case SOUTH:
+                return new Vec3(centerRandom1, centerRandom2, 1 - minRandom);
+            case UP:
+                return new Vec3(centerRandom1, 1 - minRandom, centerRandom2);
+            case DOWN:
+                return new Vec3(centerRandom1, minRandom, centerRandom2);
+            default:
+                return new Vec3(0.5, 0.5, 0.5);
+        }
     }
 
     static class BlockData {

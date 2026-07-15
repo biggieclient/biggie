@@ -13,7 +13,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Entity.class)
 public class EntityMixin {
-
 	@Shadow
 	public double motionX;
 
@@ -47,7 +46,6 @@ public class EntityMixin {
 
 			if (strafeEvent.isCancelled()) {
 				ci.cancel();
-
 				return;
 			}
 

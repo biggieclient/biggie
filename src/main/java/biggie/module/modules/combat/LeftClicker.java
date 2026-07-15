@@ -7,9 +7,12 @@ import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.IntegerSetting;
 import biggie.setting.settings.ListSetting;
 import biggie.util.misc.MouseUtil;
+import biggie.util.player.RotationUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.Vec3;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -112,12 +115,18 @@ public class LeftClicker extends Module {
 					MouseUtil.setButtonState(attackKey + 100, false);
 
 					holding = false;
-
 					return;
 				}
 
+				final MovingObjectPosition rayTrace = RotationUtil.rayTrace(
+						mc.thePlayer, mc.theWorld,
+						mc.thePlayer.rotationYaw, mc.thePlayer.rotationPitch,
+						4.5
+				);
+				final boolean canClick = rayTrace == null || rayTrace.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK;
+
 				if (Mouse.isButtonDown(attackKey + 100)) {
-					if (currTime - lastMs >= delay) {
+					if (currTime - lastMs >= delay && canClick) {
 						KeyBinding.setKeyBindState(attackKey, true);
 						KeyBinding.onTick(attackKey);
 

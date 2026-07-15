@@ -1,5 +1,6 @@
 package biggie.mixin.entity;
 
+import biggie.event.input.PostPlayerInputEvent;
 import biggie.event.motion.ItemSlowDownEvent;
 import biggie.event.motion.LivingUpdateEvent;
 import biggie.event.motion.MotionEvent;
@@ -27,15 +28,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(EntityPlayerSP.class)
 public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
-	@Shadow
-	public MovementInput movementInput;
-
 	public EntityPlayerSPMixin(
 			World worldIn,
 			GameProfile playerProfile
 	) {
 		super(worldIn, playerProfile);
 	}
+
+	@Shadow
+	public MovementInput movementInput;
 
 	@Shadow
 	protected abstract boolean isCurrentViewEntity();
@@ -260,6 +261,15 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 		boolean isWalking = this.movementInput.moveForward >= walkVelocity;
 
 		this.movementInput.updatePlayerMoveState();
+
+		final PostPlayerInputEvent postInputEvent = new PostPlayerInputEvent(
+				this.movementInput.moveForward, this.movementInput.moveStrafe
+		);
+
+		EventManager.call(postInputEvent);
+
+		this.movementInput.moveForward = postInputEvent.moveForward;
+		this.movementInput.moveStrafe = postInputEvent.moveStrafe;
 
 		ItemSlowDownEvent itemSlowDownEvent = new ItemSlowDownEvent(
 				0.2F,

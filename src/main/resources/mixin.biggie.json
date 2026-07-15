@@ -5,20 +5,21 @@
   "refmap": "refmap.biggie.json",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-	"accessors.MouseEventAccessor",
-	"entity.EntityMixin",
-	"entity.EntityPlayerMixin",
-	"network.NetworkManagerMixin"
+    "accessors.MouseEventAccessor",
+    "entity.EntityLivingBaseMixin",
+    "entity.EntityMixin",
+    "entity.EntityPlayerMixin",
+    "network.NetworkManagerMixin"
   ],
   "client": [
-	"client.MinecraftMixin",
-	"client.PlayerControllerMPMixin",
-	"entity.EntityPlayerSPMixin",
-	"gui.GuiInGameMixin",
-	"model.ModelBipedMixin",
-	"renderer.EntityRendererMixin"
+    "client.MinecraftMixin",
+    "client.PlayerControllerMPMixin",
+    "entity.EntityPlayerSPMixin",
+    "gui.GuiInGameMixin",
+    "model.ModelBipedMixin",
+    "renderer.EntityRendererMixin"
   ],
   "injectors": {
-	"defaultRequire": 1
+    "defaultRequire": 1
   }
 }
