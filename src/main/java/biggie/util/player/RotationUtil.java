@@ -1,6 +1,7 @@
 package biggie.util.player;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
@@ -17,6 +18,13 @@ public class RotationUtil {
 		final float pitch = (float) -Math.toDegrees(Math.atan2(relY, dist));
 
 		return new float[] { yaw, pitch };
+	}
+
+	public static boolean isInFOV(final float yaw, final float destYaw, final float fov) {
+		final float deltaYaw = MathHelper.wrapAngleTo180_float(destYaw - yaw);
+		final float halfFOV = fov * 0.5f;
+
+		return deltaYaw <= halfFOV && deltaYaw >= -halfFOV;
 	}
 
 	public static MovingObjectPosition rayTrace(EntityPlayer from, World world, float yaw, float pitch, double rayDistance) {
