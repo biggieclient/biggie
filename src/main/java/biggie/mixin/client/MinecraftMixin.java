@@ -4,6 +4,7 @@ import biggie.Biggie;
 import biggie.event.client.GameLoopEvent;
 import biggie.event.client.LoadWorldEvent;
 import biggie.event.client.TickEvent;
+import biggie.event.render.RenderTickEvent;
 import biggie.manager.ModuleManager;
 import biggie.module.Module;
 import biggie.module.modules.combat.NoHitDelay;
@@ -101,5 +102,17 @@ public class MinecraftMixin {
 			CallbackInfo ci
 	) {
 		EventManager.call(new LoadWorldEvent());
+	}
+
+	@Inject(
+			method = "runGameLoop",
+			at = @At(
+					value = "INVOKE",
+					target = "Lnet/minecraftforge/fml/common/FMLCommonHandler;onRenderTickEnd(F)V",
+					shift = At.Shift.AFTER
+			)
+	)
+	public void updateCameraAndRender_callRenderTickEvent(CallbackInfo ci) {
+		EventManager.call(new RenderTickEvent());
 	}
 }

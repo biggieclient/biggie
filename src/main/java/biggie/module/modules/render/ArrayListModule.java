@@ -1,6 +1,6 @@
 package biggie.module.modules.render;
 
-import biggie.event.render.Render2DEvent;
+import biggie.event.render.RenderTickEvent;
 import biggie.manager.ModuleManager;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
@@ -35,7 +35,7 @@ public class ArrayListModule extends Module {
 		super("ArrayList", ModuleCategory.RENDER, Keyboard.KEY_NONE);
 	}
 
-	@EventTarget(noParamEvents = Render2DEvent.class)
+	@EventTarget(noParamEvents = RenderTickEvent.class)
 	public void onRender2D() {
 		final ArrayList<Module> enabledModules = (ArrayList<Module>) ModuleManager.MODULES
 				.parallelStream()

@@ -244,4 +244,104 @@ public class RenderUtil {
 
 		GL11.glPopMatrix();
 	}
+
+	public static void drawOutlinedBoundingBox(
+			final AxisAlignedBB lastBoundingBox, final AxisAlignedBB boundingBox,
+			final float lineWidth,
+			final int r, final int g, final int b
+	)
+	{
+		final RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
+		final Tessellator tess = Tessellator.getInstance();
+		final WorldRenderer worldRenderer = tess.getWorldRenderer();
+
+		final double minX1 = lastBoundingBox.minX;
+		final double minX2 = boundingBox.minX;
+
+		final double minY1 = lastBoundingBox.minY;
+		final double minY2 = boundingBox.minY;
+
+		final double minZ1 = lastBoundingBox.minZ;
+		final double minZ2 = boundingBox.minZ;
+
+		final double maxX1 = lastBoundingBox.maxX;
+		final double maxX2 = boundingBox.maxX;
+
+		final double maxY1 = lastBoundingBox.maxY;
+		final double maxY2 = boundingBox.maxY;
+
+		final double maxZ1 = lastBoundingBox.maxZ;
+		final double maxZ2 = boundingBox.maxZ;
+
+		final double interpMinX = interpPos(minX2, minX1, ServerRotation.timer.renderPartialTicks);
+		final double interpMinY = interpPos(minY2, minY1, ServerRotation.timer.renderPartialTicks);
+		final double interpMinZ = interpPos(minZ2, minZ1, ServerRotation.timer.renderPartialTicks);
+
+		final double interpMaxX = interpPos(maxX2, maxX1, ServerRotation.timer.renderPartialTicks);
+		final double interpMaxY = interpPos(maxY2, maxY1, ServerRotation.timer.renderPartialTicks);
+		final double interpMaxZ = interpPos(maxZ2, maxZ1, ServerRotation.timer.renderPartialTicks);
+
+		final double relMinX = interpMinX - renderManager.viewerPosX;
+		final double relMaxX = interpMaxX - renderManager.viewerPosX;
+
+		final double relMinY = interpMinY - renderManager.viewerPosY;
+		final double relMaxY = interpMaxY - renderManager.viewerPosY;
+
+		final double relMinZ = interpMinZ - renderManager.viewerPosZ;
+		final double relMaxZ = interpMaxZ - renderManager.viewerPosZ;
+
+		GL11.glPushMatrix();
+
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+
+		GL11.glLineWidth(lineWidth);
+
+		worldRenderer.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
+
+		worldRenderer.pos(relMinX, relMinY, relMinZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMaxX, relMinY, relMinZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMaxX, relMinY, relMaxZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMinX, relMinY, relMaxZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMinX, relMinY, relMinZ).color(r, g, b, 255).endVertex();
+
+		tess.draw();
+
+		worldRenderer.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
+
+		worldRenderer.pos(relMinX, relMaxY, relMinZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMaxX, relMaxY, relMinZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMaxX, relMaxY, relMaxZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMinX, relMaxY, relMaxZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMinX, relMaxY, relMinZ).color(r, g, b, 255).endVertex();
+
+		tess.draw();
+
+		worldRenderer.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+
+		worldRenderer.pos(relMinX, relMinY, relMinZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMinX, relMaxY, relMinZ).color(r, g, b, 255).endVertex();
+
+		worldRenderer.pos(relMaxX, relMinY, relMinZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMaxX, relMaxY, relMinZ).color(r, g, b, 255).endVertex();
+
+		worldRenderer.pos(relMinX, relMinY, relMaxZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMinX, relMaxY, relMaxZ).color(r, g, b, 255).endVertex();
+
+		worldRenderer.pos(relMaxX, relMinY, relMaxZ).color(r, g, b, 255).endVertex();
+		worldRenderer.pos(relMaxX, relMaxY, relMaxZ).color(r, g, b, 255).endVertex();
+
+		tess.draw();
+
+		GL11.glDisable(GL11.GL_BLEND);
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glEnable(GL11.GL_CULL_FACE);
+
+		GL11.glPopMatrix();
+	}
 }

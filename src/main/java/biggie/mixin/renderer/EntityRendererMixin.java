@@ -1,6 +1,7 @@
 package biggie.mixin.renderer;
 
 import biggie.event.render.Render3DEvent;
+import biggie.event.render.RenderTickEvent;
 import net.lenni0451.asmevents.EventManager;
 import net.minecraft.client.renderer.EntityRenderer;
 import org.spongepowered.asm.mixin.Mixin;

@@ -15,7 +15,6 @@
     "client.MinecraftMixin",
     "client.PlayerControllerMPMixin",
     "entity.EntityPlayerSPMixin",
-    "gui.GuiInGameMixin",
     "model.ModelBipedMixin",
     "renderer.EntityRendererMixin"
   ],
