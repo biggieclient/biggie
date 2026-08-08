@@ -1,7 +1,6 @@
 package biggie.util.player;
 
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
@@ -21,8 +20,8 @@ public class RotationUtil {
 	}
 
 	public static MovingObjectPosition rayTrace(EntityPlayer from, World world, float yaw, float pitch, double rayDistance) {
-		final double radYaw = Math.toRadians(yaw);
-		final double radPitch = Math.toRadians(-pitch);
+		double radYaw = Math.toRadians(yaw);
+		double radPitch = Math.toRadians(-pitch);
 
 		final double pitchFactor = Math.cos(radPitch);
 
@@ -52,14 +51,14 @@ public class RotationUtil {
 		double relMaxY = maxY - startY;
 		double relMinY = minY - startY;
 
-		final double radYaw = Math.toRadians(yaw);
-		final double radPitch = Math.toRadians(-pitch);
+		final double rYaw = Math.toRadians(yaw);
+		final double rPitch = Math.toRadians(-pitch);
 
-		final double pitchFactor = Math.cos(radPitch);
+		final double pitchFactor = Math.cos(rPitch);
 
-		final double xDir = -Math.sin(radYaw) * pitchFactor;
-		final double zDir = Math.cos(radYaw) * pitchFactor;
-		final double yDir = Math.sin(radPitch);
+		final double xDir = -Math.sin(rYaw) * pitchFactor;
+		final double zDir = Math.cos(rYaw) * pitchFactor;
+		final double yDir = Math.sin(rPitch);
 
 		if (xDir < 0) {
 			final double temp = relMinX;

@@ -11,7 +11,6 @@ import biggie.module.ModuleCategory;
 import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.IntegerSetting;
 import biggie.util.network.PacketUtil;
-import biggie.util.player.ChatUtil;
 import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
@@ -75,9 +74,11 @@ public class LagRange extends Module {
 
 						if (mc.thePlayer.getDistanceToEntity(en) <= range.value) {
 							if (attacking) {
-								attacking = false;
+								if (shouldLag) {
+									shouldLag = false;
+								}
 
-								shouldLag = false;
+								attacking = false;
 							} else {
 								shouldLag = true;
 							}
@@ -90,18 +91,33 @@ public class LagRange extends Module {
 
 	@EventTarget
 	public void onMotion(MotionEvent event) {
-		if (!packets.isEmpty()) {
-			if (System.currentTimeMillis() - lastMs >= delay.value) {
-				for (Packet<?> packet : packets) {
-					PacketUtil.sendPacketNoEvent(packet);
+		if (event.getType() == EnumEventType.PRE) {
+			if (shouldLag) {
+				if (!packets.isEmpty()) {
+					if (System.currentTimeMillis() - lastMs >= delay.value) {
+						for (Packet<?> packet : packets) {
+							PacketUtil.sendPacketNoEvent(packet);
+						}
+
+						packets.clear();
+
+						lastPos = mc.thePlayer.getPositionVector();
+						lastMs = System.currentTimeMillis();
+					}
 				}
+			} else {
+				if (!packets.isEmpty()) {
+					if (System.currentTimeMillis() - lastMs >= delay.value) {
+						for (Packet<?> packet : packets) {
+							PacketUtil.sendPacketNoEvent(packet);
+						}
 
-				packets.clear();
+						packets.clear();
 
-				lastPos = mc.thePlayer.getPositionVector();
-				shouldLag = false;
-
-				lastMs = System.currentTimeMillis();
+						lastPos = null;
+						lastMs = 0;
+					}
+				}
 			}
 		}
 	}
@@ -113,15 +129,15 @@ public class LagRange extends Module {
 					lastPos.xCoord,
 					lastPos.yCoord,
 					lastPos.zCoord,
-					lastPos.xCoord + 1,
-					lastPos.yCoord + 1,
-					lastPos.zCoord + 1,
+					lastPos.xCoord + mc.thePlayer.width,
+					lastPos.yCoord + mc.thePlayer.height,
+					lastPos.zCoord + mc.thePlayer.width,
 					lastPos.xCoord,
 					lastPos.yCoord,
 					lastPos.zCoord,
-					lastPos.xCoord,
-					lastPos.yCoord,
-					lastPos.zCoord,
+					lastPos.xCoord + mc.thePlayer.width,
+					lastPos.yCoord + mc.thePlayer.height,
+					lastPos.zCoord + mc.thePlayer.width,
 					0,
 					255,
 					0,

@@ -27,8 +27,6 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Backtrack extends Module {
-	// INFO: Pode ser util em alguns servers, quais? não sei!
-	//private final BooleanSetting cancelPing = new BooleanSetting("Cancel Ping", false);
 	private final BooleanSetting cancelPong = new BooleanSetting("Cancel Pong", false);
 	private final BooleanSetting cancelKnockback = new BooleanSetting("Cancel Knockback", false);
 	private final BooleanSetting cancelKeepAlive = new BooleanSetting("Cancel Keep Alive", false);
@@ -55,7 +53,7 @@ public class Backtrack extends Module {
 		flushPackets();
 	}
 
-	@EventTarget(priority = EnumEventPriority.HIGH)
+	@EventTarget(priority = EnumEventPriority.HIGHEST)
 	public void onAttack(AttackEvent event) {
 		if (event.getType() == EnumEventType.POST) {
 			if (event.entity instanceof EntityLivingBase) {
@@ -102,20 +100,20 @@ public class Backtrack extends Module {
 			return;
 
         for (PacketData data : packets) {
-            if (currTime - data.receiveTime > delay.value) {
-                if (data.isClient) {
-                    PacketUtil.sendPacketNoEvent(data.packet);
-                } else {
-                    PacketUtil.receivePacket(data.packet);
-                }
+			long delayMs = data.packet instanceof S32PacketConfirmTransaction ?
+					delay.value >> 1 :
+					delay.value;
+
+            if (currTime - data.receiveTime > delayMs) {
+				PacketUtil.receivePacket(data.packet);
 
                 packets.remove(data);
             }
         }
 	}
 
-	@EventTarget
-	public void onRender3D(Render3DEvent event) {
+	@EventTarget(noParamEvents = Render3DEvent.class)
+	public void onRender3D() {
 		if (target == null)
 			return;
 
@@ -148,16 +146,17 @@ public class Backtrack extends Module {
 			return;
 
 		if (
-				(event.packet instanceof S12PacketEntityVelocity && !cancelKnockback.value)  ||
-				(event.packet instanceof S00PacketKeepAlive && !cancelKeepAlive.value)       ||
-				event.packet instanceof S3EPacketTeams                                       ||
-				event.packet instanceof S20PacketEntityProperties                            ||
-				event.packet instanceof S0FPacketSpawnMob                                    ||
-				event.packet instanceof S40PacketDisconnect                                  ||
-				event.packet instanceof S26PacketMapChunkBulk                                ||
-				event.packet instanceof S21PacketChunkData                                   ||
-				event.packet instanceof S3BPacketScoreboardObjective                         ||
-				event.packet instanceof S02PacketChat
+				(event.packet instanceof S12PacketEntityVelocity && !cancelKnockback.value)	||
+				(event.packet instanceof S00PacketKeepAlive && !cancelKeepAlive.value) ||
+				event.packet instanceof S3EPacketTeams ||
+				event.packet instanceof S20PacketEntityProperties ||
+				event.packet instanceof S0FPacketSpawnMob ||
+				event.packet instanceof S40PacketDisconnect ||
+				event.packet instanceof S26PacketMapChunkBulk ||
+				event.packet instanceof S21PacketChunkData ||
+				event.packet instanceof S3BPacketScoreboardObjective ||
+				event.packet instanceof S02PacketChat ||
+				event.packet instanceof S0CPacketSpawnPlayer
 		)
 			return;
 
@@ -247,21 +246,18 @@ public class Backtrack extends Module {
 			}
 		}
 
-		packets.add(new PacketData(currTime, event.packet, false));
+		packets.add(new PacketData(currTime, event.packet));
 		event.setCancelled(true);
 	}
 
 	void flushPackets() {
 		synchronized (packets) {
 			for (PacketData data : packets) {
-				if (data.packet instanceof S12PacketEntityVelocity && ((S12PacketEntityVelocity) data.packet).getEntityID() == mc.thePlayer.getEntityId())
+				if (data.packet instanceof S12PacketEntityVelocity && ((S12PacketEntityVelocity) data.packet).getEntityID() == mc.thePlayer.getEntityId()) {
 					ModuleManager.getModule(Velocity.class).receivedDamage = true;
-
-				if (data.isClient) {
-					PacketUtil.sendPacketNoEvent(data.packet);
-				} else {
-					PacketUtil.receivePacket(data.packet);
 				}
+
+				PacketUtil.receivePacket(data.packet);
 			}
 
 			packets.clear();
@@ -273,12 +269,10 @@ public class Backtrack extends Module {
 	static class PacketData {
 		public final long receiveTime;
 		public final Packet<?> packet;
-		public final boolean isClient;
 
-		public PacketData(long receiveTime, Packet<?> packet, boolean isClient) {
+		public PacketData(long receiveTime, Packet<?> packet) {
 			this.receiveTime = receiveTime;
 			this.packet = packet;
-			this.isClient = isClient;
 		}
 	}
 

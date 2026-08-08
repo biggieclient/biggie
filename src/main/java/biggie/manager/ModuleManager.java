@@ -19,6 +19,7 @@ public class ModuleManager {
 	public static void init() {
 		MODULES.addAll(Arrays.asList(
 				// combat modules
+				new AimAssist(),
 				new Backtrack(),
 				new KillAura(),
 				new LagRange(),
@@ -44,7 +45,7 @@ public class ModuleManager {
 				new ESP()
 		));
 
-		MODULES.sort((m1, m2) -> m2.name.compareToIgnoreCase(m1.name));
+		MODULES.sort((m1, m2) -> m1.name.compareToIgnoreCase(m2.name));
 
 		for (Module module : MODULES) {
 			for (Field field : module.getClass().getDeclaredFields()) {
