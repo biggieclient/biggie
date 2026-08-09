@@ -71,6 +71,9 @@ public class Backtrack extends Module {
 		if (event.getType() != EnumEventType.PRE)
 			return;
 
+		if (mc.thePlayer == null || mc.theWorld == null || mc.getNetHandler() == null)
+			return;
+
 		final long currTime = System.currentTimeMillis();
 
 		if (target != null && (currTime - lastAttack > targetFlushDelay.value)) {
