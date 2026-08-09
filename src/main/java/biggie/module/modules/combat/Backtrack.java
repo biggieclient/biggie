@@ -27,10 +27,6 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Backtrack extends Module {
-	private final BooleanSetting cancelPong = new BooleanSetting("Cancel Pong", false);
-	private final BooleanSetting cancelKnockback = new BooleanSetting("Cancel Knockback", false);
-	private final BooleanSetting cancelKeepAlive = new BooleanSetting("Cancel Keep Alive", false);
-
 	private final IntegerSetting delay = new IntegerSetting("Delay", 100, 10, 1000, 1);
 	private final IntegerSetting targetFlushDelay = new IntegerSetting("Target Flush Delay", 100, 100, 1000, 50);
 
@@ -55,11 +51,12 @@ public class Backtrack extends Module {
 
 	@EventTarget(priority = EnumEventPriority.HIGHEST)
 	public void onAttack(AttackEvent event) {
-		if (event.getType() == EnumEventType.POST) {
-			if (event.entity instanceof EntityLivingBase) {
-				target = (EntityLivingBase) event.entity;
-				lastAttack = System.currentTimeMillis();
-			}
+		if (event.getType() != EnumEventType.POST)
+			return;
+
+		if (event.entity instanceof EntityLivingBase) {
+			target = (EntityLivingBase) event.entity;
+			lastAttack = System.currentTimeMillis();
 		}
 	}
 
@@ -71,7 +68,7 @@ public class Backtrack extends Module {
 
 	@EventTarget
 	public void onTick(TickEvent event) {
-		if (event.getType() != EnumEventType.POST)
+		if (event.getType() != EnumEventType.PRE)
 			return;
 
 		final long currTime = System.currentTimeMillis();
@@ -100,13 +97,24 @@ public class Backtrack extends Module {
 			return;
 
         for (PacketData data : packets) {
-			long delayMs = data.packet instanceof S32PacketConfirmTransaction ?
-					delay.value >> 1 :
-					delay.value;
+			if (currTime - data.receiveTime > delay.value) {
+				if (data.packet instanceof S0CPacketSpawnPlayer) {
+					final S0CPacketSpawnPlayer S0C = (S0CPacketSpawnPlayer) data.packet;
 
-            if (currTime - data.receiveTime > delayMs) {
+					if (mc.theWorld.getEntityByID(S0C.getEntityID()) == null) {
+						packets.remove(data);
+						continue;
+					}
+				}
+
+				if (data.packet instanceof S12PacketEntityVelocity) {
+					final S12PacketEntityVelocity S12 = (S12PacketEntityVelocity) data.packet;
+
+					if (S12.getEntityID() == mc.thePlayer.getEntityId())
+						ModuleManager.getModule(Velocity.class).receivedDamage = true;
+				}
+
 				PacketUtil.receivePacket(data.packet);
-
                 packets.remove(data);
             }
         }
@@ -146,21 +154,14 @@ public class Backtrack extends Module {
 			return;
 
 		if (
-				(event.packet instanceof S12PacketEntityVelocity && !cancelKnockback.value)	||
-				(event.packet instanceof S00PacketKeepAlive && !cancelKeepAlive.value) ||
-				event.packet instanceof S3EPacketTeams ||
-				event.packet instanceof S20PacketEntityProperties ||
-				event.packet instanceof S0FPacketSpawnMob ||
-				event.packet instanceof S40PacketDisconnect ||
-				event.packet instanceof S26PacketMapChunkBulk ||
-				event.packet instanceof S21PacketChunkData ||
-				event.packet instanceof S3BPacketScoreboardObjective ||
-				event.packet instanceof S02PacketChat ||
-				event.packet instanceof S0CPacketSpawnPlayer
+				event.packet instanceof S02PacketChat        ||
+				event.packet instanceof S29PacketSoundEffect ||
+				event.packet instanceof S01PacketPong        ||
+				event.packet instanceof S06PacketUpdateHealth
 		)
 			return;
 
-		if (event.packet instanceof S01PacketPong && !cancelPong.value)
+		if (event.packet instanceof S19PacketEntityStatus && ((S19PacketEntityStatus) event.packet).getEntity(mc.theWorld).getEntityId() == mc.thePlayer.getEntityId())
 			return;
 
 		if (event.packet instanceof S08PacketPlayerPosLook) {
@@ -253,10 +254,6 @@ public class Backtrack extends Module {
 	void flushPackets() {
 		synchronized (packets) {
 			for (PacketData data : packets) {
-				if (data.packet instanceof S12PacketEntityVelocity && ((S12PacketEntityVelocity) data.packet).getEntityID() == mc.thePlayer.getEntityId()) {
-					ModuleManager.getModule(Velocity.class).receivedDamage = true;
-				}
-
 				PacketUtil.receivePacket(data.packet);
 			}
 
