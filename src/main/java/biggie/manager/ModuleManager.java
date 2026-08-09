@@ -33,6 +33,7 @@ public class ModuleManager {
 				new NoBreakSlow(),
 				new FastMine(),
 				new Scaffold(),
+				new FastPlace(),
 
 				// movement modules
 				new NoItemSlow(),

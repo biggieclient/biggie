@@ -117,13 +117,7 @@ public class LeftClicker extends Module {
 					holding = false;
 					return;
 				}
-
-				final MovingObjectPosition rayTrace = RotationUtil.rayTrace(
-						mc.thePlayer, mc.theWorld,
-						mc.thePlayer.rotationYaw, mc.thePlayer.rotationPitch,
-						4.5
-				);
-				final boolean canClick = rayTrace == null || rayTrace.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK;
+				final boolean canClick = mc.objectMouseOver.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK;
 
 				if (Mouse.isButtonDown(attackKey + 100)) {
 					if (currTime - lastMs >= delay && canClick) {
