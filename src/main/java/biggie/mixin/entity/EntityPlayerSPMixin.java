@@ -4,6 +4,7 @@ import biggie.event.input.PostPlayerInputEvent;
 import biggie.event.motion.ItemSlowDownEvent;
 import biggie.event.motion.LivingUpdateEvent;
 import biggie.event.motion.MotionEvent;
+import biggie.event.motion.UpdateEvent;
 import biggie.util.render.ServerRotation;
 import com.mojang.authlib.GameProfile;
 import net.lenni0451.asmevents.EventManager;
@@ -95,6 +96,22 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 
 	@Shadow
 	private int positionUpdateTicks;
+
+	@Inject(
+			method = "onUpdate",
+			at = @At("HEAD")
+	)
+	public void onUpdate_callPreUpdateEvent(CallbackInfo ci) {
+		EventManager.call(new UpdateEvent(EnumEventType.PRE));
+	}
+
+	@Inject(
+			method = "onUpdate",
+			at = @At("TAIL")
+	)
+	public void onUpdate_callPostUpdateEvent(CallbackInfo ci) {
+		EventManager.call(new UpdateEvent(EnumEventType.POST));
+	}
 
 	@Inject(
 			method = "onUpdateWalkingPlayer",

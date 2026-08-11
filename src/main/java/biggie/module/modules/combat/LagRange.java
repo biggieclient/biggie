@@ -1,11 +1,11 @@
 package biggie.module.modules.combat;
 
 import biggie.event.client.AttackEvent;
+import biggie.event.client.GameLoopEvent;
 import biggie.event.client.LoadWorldEvent;
-import biggie.event.client.TickEvent;
-import biggie.event.motion.MotionEvent;
 import biggie.event.network.SendPacketEvent;
 import biggie.event.render.Render3DEvent;
+import biggie.event.render.RenderTickEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.setting.settings.DoubleSetting;
@@ -23,13 +23,24 @@ import org.lwjgl.input.Keyboard;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class LagRange extends Module {
-	private final IntegerSetting delay = new IntegerSetting("Delay", 100, 10, 1000, 1);
-	private final DoubleSetting range = new DoubleSetting("Range", 4.0, 3.0, 6.0, 0.01);
+	private final IntegerSetting delay = new IntegerSetting(
+			"Delay",
+			100,
+			10,
+			1000,
+			1
+	);
+	private final DoubleSetting range = new DoubleSetting(
+			"Range",
+			4.0,
+			3.0,
+			6.0,
+			0.01
+	);
 
-	private final CopyOnWriteArrayList<Packet<?>> packets = new CopyOnWriteArrayList<>();
+	private final CopyOnWriteArrayList<PacketData> packets = new CopyOnWriteArrayList<>();
 	private Vec3 lastPos = null;
 
-	private long lastMs = 0;
 	private boolean shouldLag = false;
 	private boolean attacking = false;
 
@@ -39,84 +50,67 @@ public class LagRange extends Module {
 
 	@Override
 	public void onDisable() {
-		for (Packet<?> packet : packets) {
-			PacketUtil.sendPacketNoEvent(packet);
-		}
-
-		packets.clear();
-
 		lastPos = null;
-
-		lastMs = 0;
 
 		shouldLag = false;
 		attacking = false;
+
+		for (PacketData packetData : packets) {
+			PacketUtil.sendPacketNoEvent(packetData.packet);
+		}
+
+		packets.clear();
+	}
+
+	@EventTarget(noParamEvents = LoadWorldEvent.class)
+	public void onLoadWorld() {
+		lastPos = null;
+		shouldLag = false;
+		attacking = false;
+
+		packets.clear();
 	}
 
 	@EventTarget
 	public void onAttack(AttackEvent event) {
 		if (event.getType() == EnumEventType.PRE) {
-			attacking = true;
-		}
-	}
-
-	@EventTarget
-	public void onTick(TickEvent event) {
-		if (event.getType() == EnumEventType.PRE) {
-			if (mc.theWorld != null && mc.thePlayer != null) {
-				for (Entity entity : mc.theWorld.loadedEntityList) {
-					if (entity instanceof EntityLivingBase) {
-						EntityLivingBase en = (EntityLivingBase) entity;
-
-						if (en == mc.thePlayer) {
-							continue;
-						}
-
-						if (mc.thePlayer.getDistanceToEntity(en) <= range.value) {
-							if (attacking) {
-								if (shouldLag) {
-									shouldLag = false;
-								}
-
-								attacking = false;
-							} else {
-								shouldLag = true;
-							}
-						}
-					}
-				}
+			if (!attacking) {
+				attacking = true;
 			}
 		}
 	}
 
-	@EventTarget
-	public void onMotion(MotionEvent event) {
-		if (event.getType() == EnumEventType.PRE) {
-			if (shouldLag) {
-				if (!packets.isEmpty()) {
-					if (System.currentTimeMillis() - lastMs >= delay.value) {
-						for (Packet<?> packet : packets) {
-							PacketUtil.sendPacketNoEvent(packet);
-						}
+	@EventTarget(noParamEvents = GameLoopEvent.class)
+	public void onGameLoop() {
+		if (mc.theWorld != null && mc.thePlayer != null) {
+			for (Entity entity : mc.theWorld.loadedEntityList) {
+				if (entity instanceof EntityLivingBase) {
+					if (entity == mc.thePlayer) {
+						continue;
+					}
 
-						packets.clear();
+					if (entity.isDead) {
+						continue;
+					}
 
-						lastPos = mc.thePlayer.getPositionVector();
-						lastMs = System.currentTimeMillis();
+					if (mc.thePlayer.getDistanceToEntity(entity) < range.value) {
+						shouldLag = !attacking;
 					}
 				}
-			} else {
-				if (!packets.isEmpty()) {
-					if (System.currentTimeMillis() - lastMs >= delay.value) {
-						for (Packet<?> packet : packets) {
-							PacketUtil.sendPacketNoEvent(packet);
-						}
+			}
 
-						packets.clear();
+			attacking = false;
+		}
+	}
 
-						lastPos = null;
-						lastMs = 0;
-					}
+	@EventTarget(noParamEvents = RenderTickEvent.class)
+	public void onRenderTick() {
+		if (!packets.isEmpty()) {
+			for (PacketData packetData : packets) {
+				if (System.currentTimeMillis() - packetData.receiveTime >= delay.value) {
+					PacketUtil.sendPacketNoEvent(packetData.packet);
+
+					packets.remove(packetData);
 				}
 			}
 		}
@@ -146,23 +140,24 @@ public class LagRange extends Module {
 		}
 	}
 
-	@EventTarget(noParamEvents = LoadWorldEvent.class)
-	public void onLoadWorld() {
-		lastPos = null;
-		shouldLag = false;
-		attacking = false;
-
-		packets.clear();
-	}
-
 	@EventTarget
 	public void onSendPacket(SendPacketEvent event) {
 		if (shouldLag) {
 			if (event.packet.getClass().getSimpleName().startsWith("C")) {
-				packets.add(event.packet);
+				packets.add(new PacketData(System.currentTimeMillis(), event.packet));
 
 				event.setCancelled(true);
 			}
+		}
+	}
+
+	static class PacketData {
+		public final long receiveTime;
+		public final Packet<?> packet;
+
+		public PacketData(long receiveTime, Packet<?> packet) {
+			this.receiveTime = receiveTime;
+			this.packet = packet;
 		}
 	}
 }
