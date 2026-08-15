@@ -64,6 +64,9 @@ public class LeftClicker extends Module {
 	private long lastMs;
 	private boolean holding;
 
+	// TODO: Caso o player esteja holdando o left click e esteja mirando num bloco, fazer ele
+	//  pressionar o left click denovo pra não cancelar o break caso voce mire num bloco enquanto o clicker ta funcionando.
+
 	public LeftClicker() {
 		super("Left Clicker", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
 	}
