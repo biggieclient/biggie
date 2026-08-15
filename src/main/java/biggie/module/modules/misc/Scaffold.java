@@ -12,6 +12,7 @@ import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.ListSetting;
 import biggie.util.player.RotationUtil;
+import biggie.util.render.ServerRotation;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.block.Block;
@@ -19,10 +20,7 @@ import net.minecraft.block.BlockSand;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.Vec3;
+import net.minecraft.util.*;
 import org.lwjgl.input.Keyboard;
 
 import java.util.*;
@@ -30,15 +28,21 @@ import java.util.*;
 public class Scaffold extends Module {
     private final static double MIN_RANDOM_EPS = 0.0006;
 
-    // TODO: Adicionar mais métodos de search.
-    private final ListSetting searchMode = new ListSetting("Center", "Center", "Center", "Random");
-    private final DoubleSetting placeRange = new DoubleSetting("Place Range", 4.5, 3, 8, 0.5);
+    private final ListSetting searchMode = new ListSetting("Rotation", "Center", "Center", "Random");
+    public static final ListSetting sprintMode = new ListSetting("Sprint", "None", "None", "Sprint", "Keep-Y");
+
+    private final BooleanSetting moveFix = new BooleanSetting("Movement Fix", true);
 
     private float yaw = Float.NaN;
     private float pitch = Float.NaN;
 
     private float lastYaw = Float.NaN;
     private float lastPitch = Float.NaN;
+
+    private double keepY = Double.NaN;
+
+    private int keepTicks = 0;
+    private boolean keepRot = false;
 
     private static final EnumFacing[] BLOCK_OFFSETS = {
             EnumFacing.NORTH,
@@ -73,18 +77,49 @@ public class Scaffold extends Module {
         if (event.getType() != EnumEventType.PRE)
             return;
 
+        final float gcd = (float) Math.pow(mc.gameSettings.mouseSensitivity * 0.6f + 0.2f, 3f) * 1.2f;
+
+        if (!sprintMode.value.equals("Keep-Y") || mc.gameSettings.keyBindJump.isKeyDown() || mc.thePlayer.posY - 1 < keepY) {
+            keepY = Double.NaN;
+            keepRot = false;
+            keepTicks = 0;
+        } else if (mc.thePlayer.onGround && sprintMode.value.equals("Keep-Y")) {
+            keepY = Math.floor(mc.thePlayer.posY) - 1;
+
+            if (mc.thePlayer.movementInput.moveForward != 0 || mc.thePlayer.movementInput.moveStrafe != 0) {
+                final float patchedDeltaYaw = Math.round(MathHelper.wrapAngleTo180_float(mc.thePlayer.rotationYaw - yaw) / gcd) * gcd;
+
+                yaw = yaw + patchedDeltaYaw;
+                lastYaw = yaw + patchedDeltaYaw;
+                keepRot = true;
+            }
+        }
+
+        if (keepTicks == 1 && mc.thePlayer.onGround)
+            mc.thePlayer.jump();
+
+        if (keepTicks >= 2) {
+            keepTicks = 0;
+            keepRot = false;
+        }
+
+        if (sprintMode.value.equals("Keep-Y") && keepRot) {
+            ++keepTicks;
+            return;
+        }
+
         final Queue<BlockPos> blockQueue = new ArrayDeque<>();
         final Set<Long> visitedList = new HashSet<>();
 
         final BlockPos startBlock = new BlockPos(
-                mc.thePlayer.posX, mc.thePlayer.posY - 1, mc.thePlayer.posZ
+                mc.thePlayer.posX, Double.isNaN(keepY) ? Math.floor(mc.thePlayer.posY) - 1 : keepY, mc.thePlayer.posZ
         );
         final long startBlockLong = startBlock.toLong();
 
         blockQueue.add(startBlock);
         visitedList.add(startBlock.toLong());
 
-        final double rangeSq = (placeRange.value * placeRange.value);
+        final double rangeSq = (mc.playerController.getBlockReachDistance() * mc.playerController.getBlockReachDistance());
 
         BlockData targetBlock = null;
 
@@ -120,8 +155,6 @@ public class Scaffold extends Module {
                 break;
         }
 
-        final float gcd = (float) Math.pow(mc.gameSettings.mouseSensitivity * 0.6f + 0.2f, 3f) * 1.2f;
-
         if (targetBlock == null) {
             if (!Float.isNaN(yaw)) {
                 final float deltaYaw = mc.thePlayer.rotationYaw - yaw;
@@ -139,10 +172,7 @@ public class Scaffold extends Module {
         final double rotY = targetBlock.hitPos.getY() + targetBlock.relPos.yCoord;
         final double rotZ = targetBlock.hitPos.getZ() + targetBlock.relPos.zCoord;
 
-        final float[] rots = RotationUtil.getRotationTo(
-                mc.thePlayer,
-                rotX, rotY, rotZ
-        );
+        final float[] rots = RotationUtil.getRotationTo(mc.thePlayer, rotX, rotY, rotZ);
 
         final double dX = rotX - mc.thePlayer.posX;
         final double dY = rotY - mc.thePlayer.posY - mc.thePlayer.getEyeHeight();
@@ -209,16 +239,16 @@ public class Scaffold extends Module {
         if (event.getType() != EnumEventType.PRE)
             return;
 
-        if (Float.isNaN(yaw) || Float.isNaN(pitch))
-            return;
+        if (!Float.isNaN(yaw))
+            event.yaw = yaw;
 
-        event.yaw = yaw;
-        event.pitch = pitch;
+        if (!Float.isNaN(pitch))
+            event.pitch = pitch;
     }
 
     @EventTarget
     public void onJump(JumpEvent event) {
-        if (Float.isNaN(yaw) || Float.isNaN(pitch))
+        if (Float.isNaN(yaw)  || !moveFix.value)
             return;
 
         event.yaw = yaw;
@@ -226,7 +256,7 @@ public class Scaffold extends Module {
 
     @EventTarget
     public void onPostPlayerInput(PostPlayerInputEvent event) {
-        if (Float.isNaN(yaw) || Float.isNaN(pitch))
+        if (Float.isNaN(yaw) || !moveFix.value)
             return;
 
         final float[] fixedMove = RotationUtil.getFixedMove(
@@ -234,13 +264,13 @@ public class Scaffold extends Module {
                 mc.thePlayer.movementInput.moveForward, mc.thePlayer.movementInput.moveStrafe
         );
 
-        event.moveForward = fixedMove[0];
-        event.moveStrafe = fixedMove[1];
+        event.moveForward = fixedMove[0] * ((mc.thePlayer.isSneaking()) ? 0.3f : 1.0f);
+        event.moveStrafe = fixedMove[1] * ((mc.thePlayer.isSneaking()) ? 0.3f : 1.0f);
     }
 
     @EventTarget
     public void onStrafe(StrafeEvent event) {
-        if (Float.isNaN(yaw))
+        if (Float.isNaN(yaw) || !moveFix.value)
             return;
 
         event.yaw = yaw;

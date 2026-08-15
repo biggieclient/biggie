@@ -1,15 +1,23 @@
 package biggie.module.modules.misc;
 
 import biggie.event.client.TickEvent;
+import biggie.mixin.accessors.MinecraftAccessor;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
+import biggie.setting.settings.IntegerSetting;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
-import net.minecraft.client.Minecraft;
-import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import org.lwjgl.input.Keyboard;
 
 public class FastPlace extends Module {
+	private final IntegerSetting delay = new IntegerSetting(
+			"Delay",
+			1,
+			0,
+			5,
+			1
+	);
+
     public FastPlace() {
         super("FastPlace", ModuleCategory.MISC, Keyboard.KEY_NONE);
     }
@@ -19,6 +27,6 @@ public class FastPlace extends Module {
         if (event.getType() != EnumEventType.PRE)
             return;
 
-        ReflectionHelper.setPrivateValue(Minecraft.class, mc, 0, "field_71467_ac", "rightClickDelayTimer");
+		((MinecraftAccessor) mc).setRightClickDelayTimer(delay.value);
     }
 }

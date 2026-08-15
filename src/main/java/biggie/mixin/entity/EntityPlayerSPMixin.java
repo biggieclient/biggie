@@ -4,6 +4,7 @@ import biggie.event.input.PostPlayerInputEvent;
 import biggie.event.motion.ItemSlowDownEvent;
 import biggie.event.motion.LivingUpdateEvent;
 import biggie.event.motion.MotionEvent;
+import biggie.module.modules.misc.Scaffold;
 import biggie.util.render.ServerRotation;
 import com.mojang.authlib.GameProfile;
 import net.lenni0451.asmevents.EventManager;
@@ -295,7 +296,7 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 
 		boolean allowSprinting = (float) this.getFoodStats().getFoodLevel() > 6.0F || this.capabilities.allowFlying;
 
-		if (this.onGround && !isSneaking && !isWalking && this.movementInput.moveForward >= walkVelocity && !this.isSprinting() && allowSprinting && itemSlowDownEvent.sprint && !this.isPotionActive(Potion.blindness)) {
+		if (this.onGround && !Scaffold.sprintMode.value.equals("None") && !isSneaking && !isWalking && this.movementInput.moveForward >= walkVelocity && !this.isSprinting() && allowSprinting && itemSlowDownEvent.sprint && !this.isPotionActive(Potion.blindness)) {
 			if (this.sprintToggleTimer <= 0 && !this.mc.gameSettings.keyBindSprint.isKeyDown()) {
 				this.sprintToggleTimer = 7;
 			} else {
@@ -303,7 +304,7 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 			}
 		}
 
-		if (!this.isSprinting() && this.movementInput.moveForward >= walkVelocity && allowSprinting && itemSlowDownEvent.sprint && !this.isPotionActive(Potion.blindness) && this.mc.gameSettings.keyBindSprint.isKeyDown()) {
+		if (!this.isSprinting() && !Scaffold.sprintMode.value.equals("None") && this.movementInput.moveForward >= walkVelocity && allowSprinting && itemSlowDownEvent.sprint && !this.isPotionActive(Potion.blindness) && this.mc.gameSettings.keyBindSprint.isKeyDown()) {
 			this.setSprinting(true);
 		}
 

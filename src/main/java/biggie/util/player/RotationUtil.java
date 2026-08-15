@@ -27,9 +27,9 @@ public class RotationUtil {
 		return deltaYaw <= halfFOV && deltaYaw >= -halfFOV;
 	}
 
-	public static MovingObjectPosition rayTrace(EntityPlayer from, World world, float yaw, float pitch, double rayDistance) {
-		double radYaw = Math.toRadians(yaw);
-		double radPitch = Math.toRadians(-pitch);
+	public static MovingObjectPosition rayTrace(final EntityPlayer from, final World world, final float yaw, final float pitch, final double rayDistance) {
+		final double radYaw = Math.toRadians(yaw);
+		final double radPitch = Math.toRadians(-pitch);
 
 		final double pitchFactor = Math.cos(radPitch);
 

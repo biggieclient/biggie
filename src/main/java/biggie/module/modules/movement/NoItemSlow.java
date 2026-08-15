@@ -1,17 +1,11 @@
 package biggie.module.modules.movement;
 
 import biggie.event.motion.ItemSlowDownEvent;
-import biggie.event.network.ReceivePacketEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.DoubleSetting;
-import biggie.util.player.ChatUtil;
 import net.lenni0451.asmevents.event.EventTarget;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.play.server.S19PacketEntityStatus;
-import net.minecraft.network.play.server.S2FPacketSetSlot;
 import org.lwjgl.input.Keyboard;
 
 public class NoItemSlow extends Module {

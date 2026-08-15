@@ -16,7 +16,23 @@ public class EntityRendererMixin {
 			method = "renderHand",
 			at = @At("HEAD")
 	)
-	public void renderHand_callRender3dEvent(float partialTicks, int xOffset, CallbackInfo ci) {
+	public void renderHand_callRender3dEvent(
+			float partialTicks,
+			int xOffset,
+			CallbackInfo ci
+	) {
 		EventManager.call(new Render3DEvent());
+	}
+
+	@Inject(
+			method = "updateCameraAndRender",
+			at = @At("HEAD")
+	)
+	public void updateCameraAndRender_callRenderTick(
+			float partialTicks,
+			long nanoTime,
+			CallbackInfo ci
+	) {
+		EventManager.call(new RenderTickEvent());
 	}
 }
