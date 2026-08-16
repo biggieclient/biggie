@@ -14,6 +14,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+// TODO: Deixar isso mais completo e depois deixar ajustavel a posição com drag.
 public class ArrayListModule extends Module {
 	public final IntegerSetting posX = new IntegerSetting(
 			"Pos X",

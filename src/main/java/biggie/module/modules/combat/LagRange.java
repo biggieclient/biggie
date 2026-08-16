@@ -22,6 +22,7 @@ import org.lwjgl.input.Keyboard;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
+// TODO: Arrumar esse Lag Range.
 public class LagRange extends Module {
 	private final IntegerSetting delay = new IntegerSetting(
 			"Delay",
