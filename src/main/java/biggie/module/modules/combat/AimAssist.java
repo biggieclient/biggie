@@ -14,6 +14,8 @@ import net.minecraft.util.MathHelper;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
+// TODO: Adicionar o modo Linear que só soma um passo fixo e o modo Adaptive
+//  que é literalmente o atual que fica mais lerdo ou mais rapido dependendo da distancia da rotação.
 public class AimAssist extends Module {
 	private final BooleanSetting horizontal = new BooleanSetting(
 			"Horizontal",

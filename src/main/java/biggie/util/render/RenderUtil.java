@@ -7,8 +7,9 @@ import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.MathHelper;
 import org.lwjgl.opengl.GL11;
+
+import java.awt.*;
 
 public class RenderUtil {
 	public static double interpPos(final double destPos, final double lastTickPos, final float progress) {
@@ -294,5 +295,49 @@ public class RenderUtil {
 			final int r, final int g, final int b
 	) {
 		drawOutlinedBoundingBox(lastBoundingBox, boundingBox, lineWidth, r, g, b, ServerRotation.timer.renderPartialTicks);
+	}
+
+	public static Color getRGBColor(final float progress) {
+		return Color.getHSBColor(progress, 1.0f, 1.0f);
+	}
+
+	public static Color getInterpolatedColor(final Color color1, final Color color2, final float progress) {
+		final int dR = color2.getRed() - color1.getRed();
+		final int dG = color2.getGreen() - color1.getGreen();
+		final int dB = color2.getBlue() - color1.getBlue();
+
+		final int r = color1.getRed() + (int) (dR * progress);
+		final int g = color1.getGreen() + (int) (dG * progress);
+		final int b = color1.getBlue() + (int) (dB * progress);
+
+		return new Color(r, g, b);
+	}
+
+	public static Color getInterpolatedColor(final Color color1, final Color color2, final Color color3, final float progress) {
+		final int dR1 = color2.getRed() - color1.getRed();
+		final int dG1 = color2.getGreen() - color1.getGreen();
+		final int dB1 = color2.getBlue() - color1.getBlue();
+
+		final int r1 = color1.getRed() + (int) (dR1 * progress);
+		final int g1 = color1.getGreen() + (int) (dG1 * progress);
+		final int b1 = color1.getBlue() + (int) (dB1 * progress);
+
+		final int dR2 = color3.getRed() - color2.getRed();
+		final int dG2 = color3.getGreen() - color2.getGreen();
+		final int dB2 = color3.getBlue() - color2.getBlue();
+
+		final int r2 = color2.getRed() + (int) (dR2 * progress);
+		final int g2 = color2.getGreen() + (int) (dG2 * progress);
+		final int b2 = color2.getBlue() + (int) (dB2 * progress);
+
+		final int dR = r2 - r1;
+		final int dG = g2 - g1;
+		final int dB = b2 - b1;
+
+		final int r = r1 + (int) (dR * progress);
+		final int g = g1 + (int) (dG * progress);
+		final int b = b1 + (int) (dB * progress);
+
+		return new Color(r, g, b);
 	}
 }

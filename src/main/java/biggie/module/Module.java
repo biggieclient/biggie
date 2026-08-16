@@ -23,6 +23,10 @@ public class Module {
 		this.keybind = keybind;
 	}
 
+	public String getInfo() {
+		return "";
+	}
+
 	public boolean isEnabled() {
 		return this.enabled;
 	}

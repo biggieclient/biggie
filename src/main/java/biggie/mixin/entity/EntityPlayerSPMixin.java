@@ -4,6 +4,7 @@ import biggie.event.input.PostPlayerInputEvent;
 import biggie.event.motion.ItemSlowDownEvent;
 import biggie.event.motion.LivingUpdateEvent;
 import biggie.event.motion.MotionEvent;
+import biggie.manager.ModuleManager;
 import biggie.module.modules.misc.Scaffold;
 import biggie.util.render.ServerRotation;
 import com.mojang.authlib.GameProfile;
@@ -295,8 +296,9 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 		this.pushOutOfBlocks(this.posX + (double) this.width * 0.35D, this.getEntityBoundingBox().minY + 0.5D, this.posZ + (double) this.width * 0.35D);
 
 		boolean allowSprinting = (float) this.getFoodStats().getFoodLevel() > 6.0F || this.capabilities.allowFlying;
+		final boolean scaffoldSprint = !ModuleManager.getModule(Scaffold.class).isEnabled() || !Scaffold.sprintMode.value.equals("None");
 
-		if (this.onGround && !Scaffold.sprintMode.value.equals("None") && !isSneaking && !isWalking && this.movementInput.moveForward >= walkVelocity && !this.isSprinting() && allowSprinting && itemSlowDownEvent.sprint && !this.isPotionActive(Potion.blindness)) {
+		if (this.onGround && scaffoldSprint && !isSneaking && !isWalking && this.movementInput.moveForward >= walkVelocity && !this.isSprinting() && allowSprinting && itemSlowDownEvent.sprint && !this.isPotionActive(Potion.blindness)) {
 			if (this.sprintToggleTimer <= 0 && !this.mc.gameSettings.keyBindSprint.isKeyDown()) {
 				this.sprintToggleTimer = 7;
 			} else {
@@ -304,7 +306,7 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 			}
 		}
 
-		if (!this.isSprinting() && !Scaffold.sprintMode.value.equals("None") && this.movementInput.moveForward >= walkVelocity && allowSprinting && itemSlowDownEvent.sprint && !this.isPotionActive(Potion.blindness) && this.mc.gameSettings.keyBindSprint.isKeyDown()) {
+		if (!this.isSprinting() && scaffoldSprint && this.movementInput.moveForward >= walkVelocity && allowSprinting && itemSlowDownEvent.sprint && !this.isPotionActive(Potion.blindness) && this.mc.gameSettings.keyBindSprint.isKeyDown()) {
 			this.setSprinting(true);
 		}
 

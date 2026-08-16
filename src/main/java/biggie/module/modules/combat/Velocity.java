@@ -43,6 +43,11 @@ public class Velocity extends Module {
 		ticksInAir = 0;
 	}
 
+	@Override
+	public String getInfo() {
+		return mode.value;
+	}
+
 	@EventTarget(noParamEvents = RenderTickEvent.class)
 	public void onRenderTick() {
 		if (mc.theWorld != null && mc.thePlayer != null) {

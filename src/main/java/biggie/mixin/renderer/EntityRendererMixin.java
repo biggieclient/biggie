@@ -23,16 +23,4 @@ public class EntityRendererMixin {
 	) {
 		EventManager.call(new Render3DEvent());
 	}
-
-	@Inject(
-			method = "updateCameraAndRender",
-			at = @At("HEAD")
-	)
-	public void updateCameraAndRender_callRenderTick(
-			float partialTicks,
-			long nanoTime,
-			CallbackInfo ci
-	) {
-		EventManager.call(new RenderTickEvent());
-	}
 }

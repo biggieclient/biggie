@@ -103,4 +103,18 @@ public class MinecraftMixin {
 	) {
 		EventManager.call(new LoadWorldEvent());
 	}
+
+	@Inject(
+			method = "runGameLoop",
+			at = @At(
+					value = "INVOKE",
+					target = "Lnet/minecraftforge/fml/common/FMLCommonHandler;onRenderTickEnd(F)V",
+					shift = At.Shift.AFTER
+			)
+	)
+	public void updateCameraAndRender_callRenderTick(
+			CallbackInfo ci
+	) {
+		EventManager.call(new RenderTickEvent());
+	}
 }

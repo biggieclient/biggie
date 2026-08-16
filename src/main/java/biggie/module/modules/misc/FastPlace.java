@@ -22,6 +22,11 @@ public class FastPlace extends Module {
         super("FastPlace", ModuleCategory.MISC, Keyboard.KEY_NONE);
     }
 
+    @Override
+    public String getInfo() {
+        return delay.value.toString();
+    }
+
     @EventTarget
     public void onTick(TickEvent event) {
         if (event.getType() != EnumEventType.PRE)

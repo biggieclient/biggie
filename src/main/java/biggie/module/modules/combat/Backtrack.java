@@ -71,6 +71,11 @@ public class Backtrack extends Module {
 		flushPackets();
 	}
 
+	@Override
+	public String getInfo() {
+		return delay.value.toString();
+	}
+
 	@EventTarget(priority = EnumEventPriority.HIGHEST)
 	public void onAttack(AttackEvent event) {
 		if (event.getType() != EnumEventType.POST)
@@ -93,7 +98,7 @@ public class Backtrack extends Module {
 		flushPackets();
 	}
 
-	@EventTarget
+	@EventTarget(priority = EnumEventPriority.HIGHEST)
 	public void onTick(TickEvent event) {
 		if (event.getType() != EnumEventType.PRE)
 			return;

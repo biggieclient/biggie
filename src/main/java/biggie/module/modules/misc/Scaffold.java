@@ -6,6 +6,7 @@ import biggie.event.motion.JumpEvent;
 import biggie.event.motion.LivingUpdateEvent;
 import biggie.event.motion.MotionEvent;
 import biggie.event.motion.StrafeEvent;
+import biggie.event.render.RenderTickEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.setting.settings.BooleanSetting;
@@ -18,12 +19,14 @@ import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockSand;
+import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.*;
 import org.lwjgl.input.Keyboard;
 
+import java.awt.*;
 import java.util.*;
 
 // TODO: Fixar os flag no sprint jump do keep-y no grim.
@@ -44,6 +47,10 @@ public class Scaffold extends Module {
     private int keepTicks = 0;
     private boolean keepRot = false;
 
+    private int enableSlot = -1;
+
+    private int blocks = 0;
+
     private static final EnumFacing[] BLOCK_OFFSETS = {
             EnumFacing.NORTH,
             EnumFacing.EAST,
@@ -55,8 +62,20 @@ public class Scaffold extends Module {
     public Scaffold() { super("Scaffold", ModuleCategory.MISC, Keyboard.KEY_NONE); }
 
     @Override
+    public void onEnable() {
+        enableSlot = mc.thePlayer.inventory.currentItem;
+    }
+
+    @Override
     public void onDisable() {
         clearRotation();
+        mc.thePlayer.inventory.currentItem = enableSlot;
+        enableSlot = -1;
+    }
+
+    @Override
+    public String getInfo() {
+        return sprintMode.value;
     }
 
     @EventTarget
@@ -137,6 +156,16 @@ public class Scaffold extends Module {
 
         if (!Float.isNaN(pitch))
             event.pitch = pitch;
+    }
+
+    @EventTarget(noParamEvents = RenderTickEvent.class)
+    public void onRenderTick() {
+        final ScaledResolution scaledRes = new ScaledResolution(mc);
+
+        final String text = blocks + "blocks";
+        final float textWidth = mc.fontRendererObj.getStringWidth(text);
+
+        mc.fontRendererObj.drawStringWithShadow(text, (scaledRes.getScaledWidth() - textWidth) * 0.5f, scaledRes.getScaledHeight() * 0.5f + 15.0f, Color.WHITE.getRGB());
     }
 
     @EventTarget
@@ -220,6 +249,8 @@ public class Scaffold extends Module {
     }
 
     void findAndSetBlockSlot() {
+        int finalSlot = -1;
+
         for (int slot = 0; slot < 9; ++slot) {
             final ItemStack item = mc.thePlayer.inventory.mainInventory[slot];
 
@@ -237,8 +268,13 @@ public class Scaffold extends Module {
             if (itemBlock == Blocks.gravel || itemBlock == Blocks.sand || itemBlock == Blocks.tnt)
                 continue;
 
-            mc.thePlayer.inventory.currentItem = slot;
+            if (finalSlot == -1)
+                finalSlot = slot;
+
+            blocks += item.stackSize;
         }
+
+        mc.thePlayer.inventory.currentItem = finalSlot;
     }
 
     void placeBlock(final ItemStack itemStack, final EnumFacing facing, final BlockPos blockPos, final Vec3 placeVec) {
