@@ -13,6 +13,7 @@ import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.IntegerSetting;
 import biggie.util.math.MathUtil;
 import biggie.util.network.PacketUtil;
+import biggie.util.player.ChatUtil;
 import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventPriority;
@@ -78,6 +79,11 @@ public class Backtrack extends Module {
 		if (event.entity instanceof EntityLivingBase) {
 			target = (EntityLivingBase) event.entity;
 			lastAttack = System.currentTimeMillis();
+
+			final PosData pos = posCache.get(target);
+
+			if (pos != null)
+				ChatUtil.addMessage("§7 Backtrack Server Hit Distance: §l" + MathUtil.getModule(pos.x - mc.thePlayer.posX, pos.y - mc.thePlayer.posY, pos.z - mc.thePlayer.posZ));
 		}
 	}
 

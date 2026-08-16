@@ -26,7 +26,8 @@ import org.lwjgl.input.Keyboard;
 
 import java.util.*;
 
-// TODO: Fixar os flag no sprint jump do keep-y no grim
+// TODO: Fixar os flag no sprint jump do keep-y no grim.
+// TODO: Fixar os MixinEntitySP não checar se o Scaffold ta ativado ou não na hora de checar sprint.
 public class Scaffold extends Module {
     private final static double MIN_RANDOM_EPS = 0.0006;
 
@@ -219,7 +220,7 @@ public class Scaffold extends Module {
     }
 
     void findAndSetBlockSlot() {
-        for (int slot = 0; slot < 8; ++slot) {
+        for (int slot = 0; slot < 9; ++slot) {
             final ItemStack item = mc.thePlayer.inventory.mainInventory[slot];
 
             if (item == null)
