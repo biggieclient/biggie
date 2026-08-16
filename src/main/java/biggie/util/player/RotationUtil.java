@@ -1,5 +1,7 @@
 package biggie.util.player;
 
+import biggie.util.math.MathUtil;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
@@ -7,17 +9,42 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
 public class RotationUtil {
-	public static float[] getRotationTo(EntityPlayer from, final double x, final double y, final double z) {
-		final double relX = x - from.posX;
-		final double relY = y - from.posY - from.getEyeHeight();
-		final double relZ = z - from.posZ;
+	public static float[] getRotationTo(final EntityPlayer from, final Vec3 vec) {
+		final double dX = vec.xCoord - from.posX;
+		final double dY = vec.yCoord - from.posY - from.getEyeHeight();
+		final double dZ = vec.zCoord - from.posZ;
 
-		final double dist = Math.sqrt((relX * relX) + (relZ * relZ));
+		final double module = MathUtil.getModule(dX, 0, dZ);
 
-		final float yaw = (float) Math.toDegrees(Math.atan2(relZ, relX)) - 90;
-		final float pitch = (float) -Math.toDegrees(Math.atan2(relY, dist));
+		final float yaw = (float) Math.toDegrees(Math.atan2(dZ, dX)) - 90;
+		final float pitch = (float) -Math.toDegrees(Math.atan2(dY, module));
 
 		return new float[] { yaw, pitch };
+	}
+
+	public static float[] getRotationTo(final EntityPlayer from, final double x, final double y, final double z) {
+		final double dX = x - from.posX;
+		final double dY = y - from.posY - from.getEyeHeight();
+		final double dZ = z - from.posZ;
+
+		final double module = MathUtil.getModule(dX, 0, dZ);
+
+		final float yaw = (float) Math.toDegrees(Math.atan2(dZ, dX)) - 90;
+		final float pitch = (float) -Math.toDegrees(Math.atan2(dY, module));
+
+		return new float[] { yaw, pitch };
+	}
+
+	public static float getGCDPatchedYaw(final Minecraft mc, final float yaw, final float destYaw) {
+		final float gcd = (float) Math.pow(mc.gameSettings.mouseSensitivity * 0.6f + 0.2f, 3f) * 1.2f;
+		return yaw + MathHelper.wrapAngleTo180_float(MathUtil.alignToInterval(destYaw - yaw, gcd));
+	}
+
+	public static float getGCDPatchedPitch(final Minecraft mc, final float pitch, final float destPitch) {
+		final float gcd = (float) Math.pow(mc.gameSettings.mouseSensitivity * 0.6f + 0.2f, 3f) * 1.2f;
+		final float gcdPatchedPitch = pitch + MathHelper.wrapAngleTo180_float(MathUtil.alignToInterval(destPitch - pitch, gcd));
+
+		return MathHelper.clamp_float(gcdPatchedPitch, -90, 90);
 	}
 
 	public static boolean isInFOV(final float yaw, final float destYaw, final float fov) {
