@@ -12,14 +12,19 @@ import org.lwjgl.input.Keyboard;
 public class MoreKB extends Module {
 	private final ListSetting mode = new ListSetting(
 			"Mode",
-			"LegitFast",
-			"LegitFast"
+			"Legit",
+			"Legit"
 	);
 
 	private boolean attacked = false;
 
+	@Override
+	public String getInfo() {
+		return mode.value;
+	}
+
 	public MoreKB() {
-		super("MoreKB", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
+		super("MoreKnockback", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
 	}
 
 	@Override
@@ -38,7 +43,7 @@ public class MoreKB extends Module {
 	public void onLivingUpdate(LivingUpdateEvent event) {
 		if (attacked) {
 			if (event.getType() == EnumEventType.PRE) {
-				if (mode.value.equals("LegitFast")) {
+				if (mode.value.equals("Left")) {
 					mc.thePlayer.sprintingTicksLeft = 1;
 
 					attacked = false;
