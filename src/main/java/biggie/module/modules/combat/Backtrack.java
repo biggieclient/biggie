@@ -14,14 +14,12 @@ import biggie.setting.settings.IntegerSetting;
 import biggie.util.math.MathUtil;
 import biggie.util.network.PacketUtil;
 import biggie.util.render.RenderUtil;
-import biggie.util.render.ServerRotation;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventPriority;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.*;
 import net.minecraft.network.status.server.S01PacketPong;
@@ -37,6 +35,9 @@ public class Backtrack extends Module {
 	private final IntegerSetting targetFlushDelay = new IntegerSetting("Target Flush Delay", 100, 100, 1000, 50);
 
 	private final BooleanSetting distanceCheck = new BooleanSetting("Distance Check", true);
+
+	private final BooleanSetting cancelPong = new BooleanSetting("Cancel Pong", true);
+	private final BooleanSetting cancelKeepAlive = new BooleanSetting("Cancel Keep Alive", true);
 
 	private final BooleanSetting lineBox = new BooleanSetting("Line Box", true);
 	private final BooleanSetting filledBox = new BooleanSetting("Filled Box", false);
@@ -191,10 +192,11 @@ public class Backtrack extends Module {
 			return;
 
 		if (
-				event.packet instanceof S02PacketChat        ||
-				event.packet instanceof S29PacketSoundEffect ||
-				event.packet instanceof S01PacketPong        ||
-				event.packet instanceof S06PacketUpdateHealth
+				event.packet instanceof S02PacketChat                                  ||
+				event.packet instanceof S29PacketSoundEffect                           ||
+				(event.packet instanceof S01PacketPong && !cancelPong.value)           ||
+				event.packet instanceof S06PacketUpdateHealth                          ||
+				(event.packet instanceof S00PacketKeepAlive && !cancelKeepAlive.value)
 		)
 			return;
 
