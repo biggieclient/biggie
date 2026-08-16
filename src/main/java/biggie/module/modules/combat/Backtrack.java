@@ -9,19 +9,25 @@ import biggie.manager.ModuleManager;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.setting.settings.BooleanSetting;
+import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.IntegerSetting;
+import biggie.util.math.MathUtil;
 import biggie.util.network.PacketUtil;
 import biggie.util.render.RenderUtil;
+import biggie.util.render.ServerRotation;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventPriority;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
+import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.*;
 import net.minecraft.network.status.server.S01PacketPong;
 import net.minecraft.util.AxisAlignedBB;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.opengl.GL11;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -31,6 +37,20 @@ public class Backtrack extends Module {
 	private final IntegerSetting targetFlushDelay = new IntegerSetting("Target Flush Delay", 100, 100, 1000, 50);
 
 	private final BooleanSetting distanceCheck = new BooleanSetting("Distance Check", true);
+
+	private final BooleanSetting lineBox = new BooleanSetting("Line Box", true);
+	private final BooleanSetting filledBox = new BooleanSetting("Filled Box", false);
+	private final BooleanSetting rotate = new BooleanSetting("Rotate", true);
+
+	private final DoubleSetting fillOpacity = new DoubleSetting("Fill Opacity", 45, 20, 100, 5);
+
+	private final DoubleSetting lR = new DoubleSetting("Line Red", 255, 0, 255, 5);
+	private final DoubleSetting lG = new DoubleSetting("Line Green", 255, 0, 255, 5);
+	private final DoubleSetting lB = new DoubleSetting("Line Blue", 255,  0, 255, 5);
+
+	private final DoubleSetting fR = new DoubleSetting("Fill Red", 255, 0, 255, 5);
+	private final DoubleSetting fG = new DoubleSetting("Fill Green", 255, 0, 255, 5);
+	private final DoubleSetting fB = new DoubleSetting("Fill Blue", 255,  0, 255, 5);
 
 	private final CopyOnWriteArrayList<PacketData> packets = new CopyOnWriteArrayList<>();
 	private EntityLivingBase target = null;
@@ -88,7 +108,7 @@ public class Backtrack extends Module {
 			final double dY = pos.y - mc.thePlayer.posY;
 			final double dZ = pos.z - mc.thePlayer.posZ;
 
-			final double cacheDist = (dX * dX) + (dY * dY) + (dZ * dZ);
+			final double cacheDist = MathUtil.getSqModule(dX, dY, dZ);
 
 			if (cacheDist < mc.thePlayer.getDistanceSq(target.posX, target.posY, target.posZ)) {
 				target = null;
@@ -133,16 +153,30 @@ public class Backtrack extends Module {
 
 			final float progress = (pos.posTime == 0) ? 1.0f : Math.min(1, (float) (System.currentTimeMillis() - pos.posTime) / 200.0f);
 
-			final AxisAlignedBB box = RenderUtil.getBoundingBox(pos.x, pos.y, pos.z, target.width, target.height);
-			final AxisAlignedBB lastBox = RenderUtil.getBoundingBox(pos.lastX, pos.lastY, pos.lastZ, target.width, target.height);
+			final AxisAlignedBB boundingBox = RenderUtil.getBoundingBox(pos.x, pos.y, pos.z, target.width, target.height);
+			final AxisAlignedBB lastBoundingBox = RenderUtil.getBoundingBox(pos.lastX, pos.lastY, pos.lastZ, target.width, target.height);
 
-			RenderUtil.drawBoundingBox(
-					box.minX, box.minY, box.minZ,
-					box.maxX, box.maxY, box.maxZ,
-					lastBox.minX, lastBox.minY, lastBox.minZ,
-					lastBox.maxX, lastBox.maxY, lastBox.maxZ,
-					0, 255, 0, 63, progress
-			);
+			final RenderManager renderManager = mc.getRenderManager();
+
+			double pX = RenderUtil.interpPos(pos.x, pos.lastX, progress);
+			double pY = RenderUtil.interpPos(pos.y, pos.lastY, progress);
+			double pZ = RenderUtil.interpPos(pos.z, pos.lastZ, progress);
+
+			if (rotate.value) {
+				GL11.glPushMatrix();
+				GL11.glTranslated(pX - renderManager.viewerPosX, pY - renderManager.viewerPosY, pZ - renderManager.viewerPosZ);
+				GL11.glRotatef(-target.rotationYaw, 0.0f, 1.0f, 0.0f);
+				GL11.glTranslated(renderManager.viewerPosX - pX, renderManager.viewerPosY - pY, renderManager.viewerPosZ - pZ);
+			}
+
+			if (lineBox.value)
+				RenderUtil.drawOutlinedBoundingBox(lastBoundingBox, boundingBox, 1.6f, lR.value.intValue(), lG.value.intValue(), lB.value.intValue(), progress);
+
+			if (filledBox.value)
+				RenderUtil.drawBoundingBox(lastBoundingBox, boundingBox, fR.value.intValue(), fG.value.intValue(), fB.value.intValue(), fillOpacity.value.intValue(), progress);
+
+			if (rotate.value)
+				GL11.glPopMatrix();
 		}
 	}
 
@@ -277,20 +311,20 @@ public class Backtrack extends Module {
 	}
 
 	static class PosData {
-		public double x;
-		public double y;
-		public double z;
+		public final double x;
+		public final double y;
+		public final double z;
 
-		public double lastX;
-		public double lastY;
-		public double lastZ;
+		public final double lastX;
+		public final double lastY;
+		public final double lastZ;
 
-		public long posTime;
+		public final long posTime;
 
 		public PosData(
-				double x, double y, double z,
-				double lastX, double lastY, double lastZ,
-				long posTime
+				final double x, final double y, final double z,
+				final double lastX, final double lastY, final double lastZ,
+				final long posTime
 		) {
 			this.x = x;
 			this.y = y;

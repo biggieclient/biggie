@@ -158,6 +158,20 @@ public class RenderUtil {
 	}
 
 	public static void drawBoundingBox(
+			final AxisAlignedBB lastBoundingBox, final AxisAlignedBB boundingBox,
+			final int r, final int g, final int b, final int a, final float progress
+	) {
+		drawBoundingBox(
+				boundingBox.minX, boundingBox.minY, boundingBox.minZ,
+				boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ,
+				lastBoundingBox.minX, lastBoundingBox.minY, lastBoundingBox.minZ,
+				lastBoundingBox.maxX, lastBoundingBox.maxY, lastBoundingBox.maxZ,
+				r, g, b, a,
+				progress
+		);
+	}
+
+	public static void drawBoundingBox(
 			final double x, final double y, final double z,
 			final double x2, final double y2, final double z2,
 			final double lastX, final double lastY, final double lastZ,
@@ -177,7 +191,7 @@ public class RenderUtil {
 	public static void drawOutlinedBoundingBox(
 			final AxisAlignedBB lastBoundingBox, final AxisAlignedBB boundingBox,
 			final float lineWidth,
-			final int r, final int g, final int b
+			final int r, final int g, final int b, final float progress
 	)
 	{
 		final RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
@@ -202,13 +216,13 @@ public class RenderUtil {
 		final double maxZ1 = lastBoundingBox.maxZ;
 		final double maxZ2 = boundingBox.maxZ;
 
-		final double interpMinX = interpPos(minX2, minX1, ServerRotation.timer.renderPartialTicks);
-		final double interpMinY = interpPos(minY2, minY1, ServerRotation.timer.renderPartialTicks);
-		final double interpMinZ = interpPos(minZ2, minZ1, ServerRotation.timer.renderPartialTicks);
+		final double interpMinX = interpPos(minX2, minX1, progress);
+		final double interpMinY = interpPos(minY2, minY1, progress);
+		final double interpMinZ = interpPos(minZ2, minZ1, progress);
 
-		final double interpMaxX = interpPos(maxX2, maxX1, ServerRotation.timer.renderPartialTicks);
-		final double interpMaxY = interpPos(maxY2, maxY1, ServerRotation.timer.renderPartialTicks);
-		final double interpMaxZ = interpPos(maxZ2, maxZ1, ServerRotation.timer.renderPartialTicks);
+		final double interpMaxX = interpPos(maxX2, maxX1, progress);
+		final double interpMaxY = interpPos(maxY2, maxY1, progress);
+		final double interpMaxZ = interpPos(maxZ2, maxZ1, progress);
 
 		final double relMinX = interpMinX - renderManager.viewerPosX;
 		final double relMaxX = interpMaxX - renderManager.viewerPosX;
@@ -272,5 +286,13 @@ public class RenderUtil {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 
 		GL11.glPopMatrix();
+	}
+
+	public static void drawOutlinedBoundingBox(
+			final AxisAlignedBB lastBoundingBox, final AxisAlignedBB boundingBox,
+			final float lineWidth,
+			final int r, final int g, final int b
+	) {
+		drawOutlinedBoundingBox(lastBoundingBox, boundingBox, lineWidth, r, g, b, ServerRotation.timer.renderPartialTicks);
 	}
 }

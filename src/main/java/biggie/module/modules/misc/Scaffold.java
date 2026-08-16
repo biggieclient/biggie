@@ -26,6 +26,7 @@ import org.lwjgl.input.Keyboard;
 
 import java.util.*;
 
+// TODO: Fixar os flag no sprint jump do keep-y no grim
 public class Scaffold extends Module {
     private final static double MIN_RANDOM_EPS = 0.0006;
 
