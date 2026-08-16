@@ -227,8 +227,10 @@ public class LagRange extends Module {
 		if (event.packet instanceof C02PacketUseEntity) {
 			final C02PacketUseEntity C02 = (C02PacketUseEntity) event.packet;
 
-			if (C02.getAction() == C02PacketUseEntity.Action.ATTACK)
+			if (C02.getAction() == C02PacketUseEntity.Action.ATTACK) {
 				flushPackets();
+				return;
+			}
 		}
 
 		packets.add(new PacketData(System.currentTimeMillis(), event.packet));
