@@ -1,5 +1,6 @@
 package biggie.util.render;
 
+import biggie.util.player.RotationUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
@@ -7,6 +8,7 @@ import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.Vec3;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
@@ -287,6 +289,130 @@ public class RenderUtil {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 
 		GL11.glPopMatrix();
+	}
+
+	public static void drawWorldRect(
+			final Vec3 lastPos, final Vec3 pos, final double width, final double height,
+			final int r, final int g, final int b, final int a, final float progress
+	) {
+		final RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
+		final Tessellator tess = Tessellator.getInstance();
+		final WorldRenderer worldRenderer = tess.getWorldRenderer();
+
+		final double halfWidth = width * 0.5f;
+
+		final double minX1 = lastPos.xCoord - halfWidth;
+		final double maxX1 = lastPos.xCoord + halfWidth;
+
+		final double minX2 = pos.xCoord - halfWidth;
+		final double maxX2 = pos.xCoord + halfWidth;
+
+		final double minY1 = lastPos.yCoord;
+		final double maxY1 = lastPos.yCoord + height;
+
+		final double minY2 = pos.yCoord;
+		final double maxY2 = pos.yCoord + height;
+
+		final double interpMinX = interpPos(minX2, minX1, progress);
+		final double interpMinY = interpPos(minY2, minY1, progress);
+
+		final double interpMaxX = interpPos(maxX2, maxX1, progress);
+		final double interpMaxY = interpPos(maxY2, maxY1, progress);
+
+		final double interpZ = interpPos(pos.zCoord, lastPos.zCoord, progress);
+
+		final double relMinX = interpMinX;// - renderManager.viewerPosX;
+		final double relMaxX = interpMaxX;// - renderManager.viewerPosX;
+
+		final double relMinY = interpMinY;// - renderManager.viewerPosY;
+		final double relMaxY = interpMaxY;// - renderManager.viewerPosY;
+
+		final double relZ = interpZ;// - renderManager.viewerPosZ;
+
+		GL11.glPushMatrix();
+
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+
+		worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+
+		worldRenderer.pos(relMinX, relMinY, relZ).color(r, g, b, a).endVertex();
+		worldRenderer.pos(relMinX, relMaxY, relZ).color(r, g, b, a).endVertex();
+		worldRenderer.pos(relMaxX, relMaxY, relZ).color(r, g, b, a).endVertex();
+		worldRenderer.pos(relMaxX, relMinY, relZ).color(r, g, b, a).endVertex();
+
+		tess.draw();
+
+		GL11.glDisable(GL11.GL_BLEND);
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glEnable(GL11.GL_CULL_FACE);
+
+		GL11.glPopMatrix();
+	}
+
+	public static void drawWorldText(
+			final Vec3 lastPos, final Vec3 pos, final String text, final float angle,
+			final int r, final int g, final int b, final int a, final float scale, final float progress
+	) {
+		final double width = Minecraft.getMinecraft().fontRendererObj.getStringWidth(text);
+		final double height = Minecraft.getMinecraft().fontRendererObj.FONT_HEIGHT;
+
+		final RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
+
+		final double interpX = interpPos(pos.xCoord, lastPos.xCoord, progress);
+		final double interpY = interpPos(pos.yCoord, lastPos.yCoord, progress);
+		final double interpZ = interpPos(pos.zCoord, lastPos.zCoord, progress);
+
+		final double relX = interpX - renderManager.viewerPosX;
+		final double relY = interpY - renderManager.viewerPosY;
+		final double relZ = interpZ - renderManager.viewerPosZ;
+
+		GL11.glPushMatrix();
+
+		GL11.glTranslated(relX, relY, relZ);
+		GL11.glScaled(-scale, -scale, scale);
+
+		//GL11.glRotatef(
+		//		angle,
+		//		0.0f,
+		//		1.0f,
+		//		0.0f
+		//);
+
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+
+		Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(text, (float) (-width * 0.5), (float) -height, new Color(r, g, b, a).getRGB());
+
+		GL11.glTranslated(-relX, -relY, -relZ);
+
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_BLEND);
+
+		GL11.glPopMatrix();
+	}
+
+	public static void drawWorldText(
+			final Vec3 lastPos, final Vec3 pos, final String text, final float angle,
+			final int r, final int g, final int b, final int a, final float scale
+	) {
+		drawWorldText(lastPos, pos, text, angle, r, g, b, a, scale, ServerRotation.timer.renderPartialTicks);
+	}
+
+	public static void drawWorldRect(
+			final Vec3 lastPos, final Vec3 pos, final double width, final double height,
+			final int r, final int g, final int b, final int a
+	) {
+		drawWorldRect(lastPos, pos, width, height, r, g, b, a, ServerRotation.timer.renderPartialTicks);
 	}
 
 	public static void drawOutlinedBoundingBox(

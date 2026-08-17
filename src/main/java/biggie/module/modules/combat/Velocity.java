@@ -78,9 +78,8 @@ public class Velocity extends Module {
 	@EventTarget
 	public void onReceivePacket(ReceivePacketEvent event) {
 		if (event.packet instanceof S12PacketEntityVelocity && !event.isCancelled()) {
-			if (((S12PacketEntityVelocity) event.packet).getEntityID() == mc.thePlayer.getEntityId()) {
+			if (((S12PacketEntityVelocity) event.packet).getEntityID() == mc.thePlayer.getEntityId())
 				receivedDamage = true;
-			}
 		}
 	}
 

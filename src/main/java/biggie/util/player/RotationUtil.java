@@ -1,6 +1,7 @@
 package biggie.util.player;
 
 import biggie.util.math.MathUtil;
+import biggie.util.render.ServerRotation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
@@ -33,6 +34,16 @@ public class RotationUtil {
 		final float pitch = (float) -Math.toDegrees(Math.atan2(dY, module));
 
 		return new float[] { yaw, pitch };
+	}
+
+	public static float getInterpYaw(final float yaw, final float destYaw, final float progress) {
+		final float patchedDeltaYaw = MathHelper.wrapAngleTo180_float(destYaw - yaw);
+		return yaw + patchedDeltaYaw * progress;
+	}
+
+	public static float getInterpYaw(final float yaw, final float destYaw) {
+		final float patchedDeltaYaw = MathHelper.wrapAngleTo180_float(destYaw - yaw);
+		return yaw + patchedDeltaYaw * ServerRotation.timer.renderPartialTicks;
 	}
 
 	public static float getGCDPatchedYaw(final Minecraft mc, final float yaw, final float destYaw) {

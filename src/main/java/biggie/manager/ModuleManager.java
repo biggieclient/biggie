@@ -43,7 +43,8 @@ public class ModuleManager {
 				// render modules
 				new ClickGuiModule(),
 				new ArrayListModule(),
-				new ESP()
+				new ESP(),
+				new Nametags()
 		));
 
 		MODULES.sort((m1, m2) -> m1.name.compareToIgnoreCase(m2.name));
