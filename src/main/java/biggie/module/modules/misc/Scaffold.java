@@ -142,7 +142,11 @@ public class Scaffold extends Module {
         yaw = RotationUtil.getGCDPatchedYaw(mc, fixedLastYaw, rots[0]);
         pitch = RotationUtil.getGCDPatchedPitch(mc, fixedLastPitch, rots[1]);
 
-        findAndSetBlockSlot();
+        final boolean found = findAndSetBlockSlot();
+
+        if (!found)
+            return;
+
         placeBlock(mc.thePlayer.getHeldItem(), targetBlock.facing, targetBlock.blockPos, placeVec);
     }
 
@@ -160,9 +164,12 @@ public class Scaffold extends Module {
 
     @EventTarget(noParamEvents = RenderTickEvent.class)
     public void onRenderTick() {
+        if (mc.currentScreen != null)
+            return;
+
         final ScaledResolution scaledRes = new ScaledResolution(mc);
 
-        final String text = blocks + "blocks";
+        final String text = blocks + " blocks";
         final float textWidth = mc.fontRendererObj.getStringWidth(text);
 
         mc.fontRendererObj.drawStringWithShadow(text, (scaledRes.getScaledWidth() - textWidth) * 0.5f, scaledRes.getScaledHeight() * 0.5f + 15.0f, Color.WHITE.getRGB());
@@ -248,7 +255,8 @@ public class Scaffold extends Module {
         return targetBlock;
     }
 
-    void findAndSetBlockSlot() {
+    boolean findAndSetBlockSlot() {
+        blocks = 0;
         int finalSlot = -1;
 
         for (int slot = 0; slot < 9; ++slot) {
@@ -274,7 +282,10 @@ public class Scaffold extends Module {
             blocks += item.stackSize;
         }
 
-        mc.thePlayer.inventory.currentItem = finalSlot;
+        if (finalSlot != -1)
+            mc.thePlayer.inventory.currentItem = finalSlot;
+
+        return finalSlot != -1;
     }
 
     void placeBlock(final ItemStack itemStack, final EnumFacing facing, final BlockPos blockPos, final Vec3 placeVec) {
