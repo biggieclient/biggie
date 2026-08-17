@@ -20,7 +20,7 @@ public class ModuleManager {
 		MODULES.addAll(Arrays.asList(
 				// combat modules
 				new AimAssist(),
-				new Backtrack(),
+				new BackTrack(),
 				new KillAura(),
 				new LagRange(),
 				new LeftClicker(),
@@ -44,7 +44,7 @@ public class ModuleManager {
 				new ClickGuiModule(),
 				new ArrayListModule(),
 				new ESP(),
-				new Nametags()
+				new NameTags()
 		));
 
 		MODULES.sort((m1, m2) -> m1.name.compareToIgnoreCase(m2.name));

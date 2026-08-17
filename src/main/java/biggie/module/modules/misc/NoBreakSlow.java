@@ -6,6 +6,6 @@ import org.lwjgl.input.Keyboard;
 
 public class NoBreakSlow extends Module {
 	public NoBreakSlow() {
-		super("No Break Slow", ModuleCategory.MISC, Keyboard.KEY_NONE);
+		super("NoBreakSlow", ModuleCategory.MISC, Keyboard.KEY_NONE);
 	}
 }

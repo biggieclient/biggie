@@ -321,14 +321,6 @@ public class RenderUtil {
 
 		final double interpZ = interpPos(pos.zCoord, lastPos.zCoord, progress);
 
-		final double relMinX = interpMinX;// - renderManager.viewerPosX;
-		final double relMaxX = interpMaxX;// - renderManager.viewerPosX;
-
-		final double relMinY = interpMinY;// - renderManager.viewerPosY;
-		final double relMaxY = interpMaxY;// - renderManager.viewerPosY;
-
-		final double relZ = interpZ;// - renderManager.viewerPosZ;
-
 		GL11.glPushMatrix();
 
 		GL11.glEnable(GL11.GL_BLEND);
@@ -340,10 +332,10 @@ public class RenderUtil {
 
 		worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-		worldRenderer.pos(relMinX, relMinY, relZ).color(r, g, b, a).endVertex();
-		worldRenderer.pos(relMinX, relMaxY, relZ).color(r, g, b, a).endVertex();
-		worldRenderer.pos(relMaxX, relMaxY, relZ).color(r, g, b, a).endVertex();
-		worldRenderer.pos(relMaxX, relMinY, relZ).color(r, g, b, a).endVertex();
+		worldRenderer.pos(interpMinX, interpMinY, interpZ).color(r, g, b, a).endVertex();
+		worldRenderer.pos(interpMinX, interpMaxY, interpZ).color(r, g, b, a).endVertex();
+		worldRenderer.pos(interpMaxX, interpMaxY, interpZ).color(r, g, b, a).endVertex();
+		worldRenderer.pos(interpMaxX, interpMinY, interpZ).color(r, g, b, a).endVertex();
 
 		tess.draw();
 
@@ -356,7 +348,7 @@ public class RenderUtil {
 	}
 
 	public static void drawWorldText(
-			final Vec3 lastPos, final Vec3 pos, final String text, final float angle,
+			final Vec3 lastPos, final Vec3 pos, final String text,
 			final int r, final int g, final int b, final int a, final float scale, final float progress
 	) {
 		final double width = Minecraft.getMinecraft().fontRendererObj.getStringWidth(text);
@@ -375,14 +367,11 @@ public class RenderUtil {
 		GL11.glPushMatrix();
 
 		GL11.glTranslated(relX, relY, relZ);
-		GL11.glScaled(-scale, -scale, scale);
 
-		//GL11.glRotatef(
-		//		angle,
-		//		0.0f,
-		//		1.0f,
-		//		0.0f
-		//);
+		GL11.glRotatef(-renderManager.playerViewY, 0.0F, 1.0f, 0.0F);
+		GL11.glRotatef(renderManager.playerViewX, 1.0f, 0.0F, 0.0F);
+
+		GL11.glScaled(-scale, -scale, scale);
 
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -392,8 +381,6 @@ public class RenderUtil {
 
 		Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(text, (float) (-width * 0.5), (float) -height, new Color(r, g, b, a).getRGB());
 
-		GL11.glTranslated(-relX, -relY, -relZ);
-
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
@@ -402,10 +389,10 @@ public class RenderUtil {
 	}
 
 	public static void drawWorldText(
-			final Vec3 lastPos, final Vec3 pos, final String text, final float angle,
+			final Vec3 lastPos, final Vec3 pos, final String text,
 			final int r, final int g, final int b, final int a, final float scale
 	) {
-		drawWorldText(lastPos, pos, text, angle, r, g, b, a, scale, ServerRotation.timer.renderPartialTicks);
+		drawWorldText(lastPos, pos, text, r, g, b, a, scale, ServerRotation.timer.renderPartialTicks);
 	}
 
 	public static void drawWorldRect(

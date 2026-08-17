@@ -31,7 +31,7 @@ import org.lwjgl.opengl.GL11;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class Backtrack extends Module {
+public class BackTrack extends Module {
 	private final IntegerSetting delay = new IntegerSetting("Delay", 100, 10, 1000, 1);
 	private final IntegerSetting targetFlushDelay = new IntegerSetting("Target Flush Delay", 100, 100, 1000, 50);
 
@@ -61,8 +61,8 @@ public class Backtrack extends Module {
 
 	private long lastAttack = 0;
 
-	public Backtrack() {
-		super("Backtrack", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
+	public BackTrack() {
+		super("BackTrack", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
 	}
 
 	@Override
@@ -84,11 +84,6 @@ public class Backtrack extends Module {
 		if (event.entity instanceof EntityLivingBase) {
 			target = (EntityLivingBase) event.entity;
 			lastAttack = System.currentTimeMillis();
-
-			final PosData pos = posCache.get(target);
-
-			if (pos != null)
-				ChatUtil.addMessage("§7 Backtrack Server Hit Distance: §l" + MathUtil.getModule(pos.x - mc.thePlayer.posX, pos.y - mc.thePlayer.posY, pos.z - mc.thePlayer.posZ));
 		}
 	}
 

@@ -10,7 +10,9 @@ import biggie.module.ModuleCategory;
 import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.ListSetting;
+import biggie.util.player.ChatUtil;
 import biggie.util.player.RotationUtil;
+import biggie.util.render.ServerRotation;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.entity.Entity;
@@ -18,6 +20,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
+import net.minecraft.util.MovingObjectPosition;
 import org.lwjgl.input.Keyboard;
 
 import java.util.ArrayList;
@@ -35,6 +38,7 @@ public class KillAura extends Module {
 	private final ListSetting blockMode = new ListSetting("Block", "Pre", "None", "Pre", "Post");
 	private final DoubleSetting blockRange = new DoubleSetting("Block Range", 3, 3, 6, 0.05);
 
+	private final BooleanSetting throughBlocks = new BooleanSetting("Through Blocks", true);
 	private final BooleanSetting moveFix = new BooleanSetting("Movement Fix", true);
 
 	private final ArrayList<EntityLivingBase> targets = new ArrayList<>();
@@ -80,11 +84,11 @@ public class KillAura extends Module {
 		final ItemStack currItem = mc.thePlayer.getHeldItem();
 
 		final boolean shouldBlock =
-				findTargets(attackRange.value * attackRange.value, blockRange.value * blockRange.value) &&
+				findTargets(((attackRange.value * 2) * (attackRange.value * 2)), blockRange.value * blockRange.value) &&
 						currItem != null &&
 						currItem.getItem() instanceof ItemSword;
-		final boolean shouldAttack = currTime - attackMs > (1000.0f / aps.value);
-		final boolean shouldSwitch = currTime - switchMs > switchDelay.value;
+		final boolean shouldAttack = currTime - attackMs >= (1000.0f / aps.value);
+		final boolean shouldSwitch = currTime - switchMs > switchDelay.value && targetMode.value.equals("Switch");
 
 		// TODO: Handle Block.
 
@@ -93,24 +97,25 @@ public class KillAura extends Module {
 			return;
 		}
 
-		if (shouldSwitch) {
-			if (switchIndex + 1 >= targets.size())
-				switchIndex = 0;
-			else
-				++switchIndex;
+		final boolean success = tryToTarget(currTime, shouldSwitch, shouldAttack);
 
-			switchMs = currTime;
+		if (success)
+			return;
+
+		// Caso a primeira tentativa é invalida tentamos todos os outros possiveis targets.
+		for (int i = 0; i < targets.size(); ++i) {
+			final EntityLivingBase en = targets.get(i);
+
+			final boolean iterationSuccess = tryToTargetEn(en, currTime, shouldAttack);
+
+			if (iterationSuccess) {
+				switchMs = currTime;
+				switchIndex = i;
+				return;
+			}
 		}
 
-		target = targets.get(switchIndex);
-
-		if (shouldAttack) {
-			mc.thePlayer.swingItem();
-			mc.playerController.attackEntity(mc.thePlayer, target);
-			attackMs = currTime;
-		}
-
-		updateRotations(target);
+		clearTargetAndRotations(false);
 	}
 
 	@EventTarget
@@ -118,7 +123,7 @@ public class KillAura extends Module {
 		if (event.getType() != EnumEventType.PRE)
 			return;
 
-		if (target == null)
+		if (target == null || Float.isNaN(yaw) || Float.isNaN(pitch))
 			return;
 
 		if (rotationMode.value.equals("Silent")) {
@@ -160,25 +165,86 @@ public class KillAura extends Module {
 		event.yaw = yaw;
 	}
 
-	void updateRotations(final EntityLivingBase target) {
+	boolean tryToTarget(final long currTime, final boolean shouldSwitch, final boolean shouldAttack) {
+		if (shouldSwitch) {
+			++switchIndex;
+			switchMs = currTime;
+		}
+
+		if (switchIndex >= targets.size())
+			switchIndex = 0;
+
+		final EntityLivingBase possibleTarget = targets.get(switchIndex);
+
+		final boolean validTarget = updateRotations(possibleTarget, true);
+
+		if (!validTarget)
+			return false;
+
+		target = possibleTarget;
+
+		if (shouldAttack) {
+			mc.thePlayer.swingItem();
+			mc.playerController.attackEntity(mc.thePlayer, target);
+			attackMs = currTime;
+		}
+
+		return true;
+	}
+
+	boolean tryToTargetEn(final EntityLivingBase possibleTarget, final long currTime, final boolean shouldAttack) {
+		final boolean validTarget = updateRotations(possibleTarget, true);
+
+		if (!validTarget)
+			return false;
+
+		target = possibleTarget;
+
+		if (shouldAttack) {
+			mc.thePlayer.swingItem();
+			mc.playerController.attackEntity(mc.thePlayer, target);
+			attackMs = currTime;
+		}
+
+		return true;
+	}
+
+	boolean updateRotations(final EntityLivingBase target, final boolean shouldRayTrace) {
 		final float fixedLastYaw = Float.isNaN(yaw) ? mc.thePlayer.rotationYaw : yaw;
 		final float fixedLastPitch = Float.isNaN(pitch) ? mc.thePlayer.rotationPitch : pitch;
 
-		final float[] rots = RotationUtil.getRotationTo(mc.thePlayer, target.posX, target.posY + target.getEyeHeight(), target.posZ);
+		final double bestRelY = RotationUtil.getBestTargetRelY(mc.thePlayer, target);
+
+		final float[] rots = RotationUtil.getRotationTo(mc.thePlayer, target.posX, target.posY + bestRelY, target.posZ);
 
 		final float patchedYaw = RotationUtil.getGCDPatchedYaw(mc, fixedLastYaw, rots[0]);
 		final float patchedPitch = RotationUtil.getGCDPatchedPitch(mc, fixedLastPitch, rots[1]);
 
+		if (shouldRayTrace) {
+			final MovingObjectPosition rayTrace =
+					RotationUtil.rayTraceAll(mc.thePlayer, mc.theWorld, patchedYaw, patchedPitch, attackRange.value * 2, !throughBlocks.value);
+
+			if (rayTrace == null || rayTrace.typeOfHit != MovingObjectPosition.MovingObjectType.ENTITY || rayTrace.entityHit != target)
+				return false;
+
+			if (mc.thePlayer.getPositionEyes(1.0f).distanceTo(rayTrace.hitVec) >= attackRange.value)
+				return false;
+		}
+
 		yaw = patchedYaw;
 		pitch = patchedPitch;
+
+		return true;
 	}
 
 	void clearTargetAndRotations(final boolean delays) {
 		target = null;
 		targets.clear();
 
-		switchMs = 0;
-		attackMs = 0;
+		if (delays) {
+			switchMs = 0;
+			attackMs = 0;
+		}
 
 		switchIndex = 0;
 

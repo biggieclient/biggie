@@ -68,7 +68,7 @@ public class LeftClicker extends Module {
 	//  pressionar o left click denovo pra não cancelar o break caso voce mire num bloco enquanto o clicker ta funcionando.
 
 	public LeftClicker() {
-		super("Left Clicker", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
+		super("LeftClicker", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
 	}
 
 	@Override

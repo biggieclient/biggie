@@ -14,7 +14,7 @@ public class NoItemSlow extends Module {
 	private final BooleanSetting allowSprinting = new BooleanSetting("Allow Sprinting", true);
 
 	public NoItemSlow() {
-		super("No Item Slow", ModuleCategory.MOVEMENT, Keyboard.KEY_NONE);
+		super("NoItemSlow", ModuleCategory.MOVEMENT, Keyboard.KEY_NONE);
 	}
 
 	@EventTarget

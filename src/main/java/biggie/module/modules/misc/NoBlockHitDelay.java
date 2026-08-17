@@ -15,6 +15,6 @@ public class NoBlockHitDelay extends Module {
 	);
 
 	public NoBlockHitDelay() {
-		super("No Block Hit Delay", ModuleCategory.MISC, Keyboard.KEY_NONE);
+		super("NoBlockHitDelay", ModuleCategory.MISC, Keyboard.KEY_NONE);
 	}
 }

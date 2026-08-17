@@ -3,11 +3,16 @@ package biggie.util.player;
 import biggie.util.math.MathUtil;
 import biggie.util.render.ServerRotation;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
+
+import java.util.List;
 
 public class RotationUtil {
 	public static float[] getRotationTo(final EntityPlayer from, final Vec3 vec) {
@@ -81,73 +86,107 @@ public class RotationUtil {
 		);
 	}
 
-	public static double rayCastToBoundingBox(
-			final double startX, final double startY, final double startZ,
-			final double minX, final double minY, final double minZ,
-			final double maxX, final double maxY, final double maxZ,
-			final float yaw, final float pitch
+	public static Vec3 getVectorForRotation(final float yaw, final float pitch) {
+		final float radPitch = (float) Math.toRadians(-pitch);
+		final float radYaw = (float) Math.toRadians(yaw + 90);
 
+		final float xDir = MathHelper.cos(radYaw);
+		final float yDir = MathHelper.sin(radPitch);
+		final float zDir = MathHelper.sin(radYaw);
+
+		final float pitchFactor = MathHelper.cos(radPitch);
+
+		return new Vec3(xDir * pitchFactor, yDir, zDir * pitchFactor);
+	}
+
+	public static double getBestTargetRelY(final EntityPlayer from, final EntityLivingBase target) {
+		final double playerEyeY = from.posY + from.getEyeHeight();
+
+		final double targetFeetY = 0;
+		final double targetChestY = target.height * 0.55;
+		final double targetHeadY = target.getEyeHeight();
+
+		if (playerEyeY >= targetHeadY)
+			return targetHeadY;
+		else if (playerEyeY <= targetFeetY)
+			return targetFeetY;
+		else
+			return targetChestY;
+	}
+
+	public static MovingObjectPosition rayTraceAll(
+			final EntityPlayer from,
+			final World world,
+			final float yaw,
+			final float pitch,
+			final double rayDistance,
+			final float partialTicks,
+			final boolean checkBlocks
 	) {
-		double relMaxX = maxX - startX;
-		double relMinX = minX - startX;
+		final Vec3 lookVec = getVectorForRotation(yaw, pitch);
 
-		double relMaxZ = maxZ - startZ;
-		double relMinZ = minZ - startZ;
+		final Vec3 eyePos = from.getPositionEyes(partialTicks);
+		final Vec3 rayVec = eyePos.add(new Vec3(lookVec.xCoord * rayDistance, lookVec.yCoord * rayDistance, lookVec.zCoord * rayDistance));
 
-		double relMaxY = maxY - startY;
-		double relMinY = minY - startY;
+		final AxisAlignedBB intersectBox = from.getEntityBoundingBox()
+				.addCoord(lookVec.xCoord * rayDistance, lookVec.yCoord * rayDistance, lookVec.zCoord * rayDistance)
+				.expand(1.0, 1.0, 1.0);
+		final List<Entity> enList = world.getEntitiesWithinAABBExcludingEntity(from, intersectBox);
 
-		final double rYaw = Math.toRadians(yaw);
-		final double rPitch = Math.toRadians(-pitch);
+		double closestDist = Double.NaN;
+		MovingObjectPosition closestRayTrace = null;
 
-		final double pitchFactor = Math.cos(rPitch);
+		final MovingObjectPosition blockRayTrace =
+				checkBlocks ? world.rayTraceBlocks(eyePos, rayVec, false, false, true)
+				: null;
 
-		final double xDir = -Math.sin(rYaw) * pitchFactor;
-		final double zDir = Math.cos(rYaw) * pitchFactor;
-		final double yDir = Math.sin(rPitch);
-
-		if (xDir < 0) {
-			final double temp = relMinX;
-			relMinX = relMaxX;
-			relMaxX = temp;
+		if (blockRayTrace != null) {
+			closestDist = eyePos.distanceTo(blockRayTrace.hitVec);
+			closestRayTrace = blockRayTrace;
 		}
 
-		if (yDir < 0) {
-			final double temp = relMinY;
-			relMinY = relMaxY;
-			relMaxY = temp;
+		for (final Entity en : enList) {
+			if (!en.canBeCollidedWith())
+				continue;
 
+			final float borderSize = en.getCollisionBorderSize();
+			final AxisAlignedBB boundingBox = en.getEntityBoundingBox().expand(borderSize, borderSize, borderSize);
+
+			if (boundingBox.isVecInside(eyePos)) {
+				if (!Double.isNaN(closestDist) && closestDist <= 0.0)
+					continue;
+
+				closestDist = 0.0;
+				closestRayTrace = new MovingObjectPosition(en, eyePos);
+				continue;
+			}
+
+			final MovingObjectPosition enRayTrace = boundingBox.calculateIntercept(eyePos, rayVec);
+
+			if (enRayTrace == null)
+				continue;
+
+			final double dist = eyePos.distanceTo(enRayTrace.hitVec);
+
+			if (!Double.isNaN(closestDist) && dist >= closestDist)
+				continue;
+
+			closestDist = dist;
+			closestRayTrace = new MovingObjectPosition(en, enRayTrace.hitVec);
 		}
 
-		if (zDir < 0) {
-			final double temp = relMinZ;
-			relMinZ = relMaxZ;
-			relMaxZ = temp;
-		}
+		return closestRayTrace;
+	}
 
-		final double invXDir = 1 / xDir;
-		final double invZDir = 1 / zDir;
-		final double invYDir = 1 / yDir;
-
-		final double tMaxX = relMaxX * invXDir;
-		final double tMinX = relMinX * invXDir;
-
-		final double tMaxZ = relMaxZ * invZDir;
-		final double tMinZ = relMinZ * invZDir;
-
-		final double tMaxY = relMaxY * invYDir;
-		final double tMinY = relMinY * invYDir;
-
-		final double minIntersect = Math.max(Math.max(tMinX, tMinZ), tMinY);
-		final double maxIntersect = Math.min(Math.min(tMaxX, tMaxZ), tMaxY);
-
-		if (minIntersect > maxIntersect)
-			return -1;
-
-		if (maxIntersect < 0)
-			return -1;
-
-		return Math.max(0, minIntersect);
+	public static MovingObjectPosition rayTraceAll(
+			final EntityPlayer from,
+			final World world,
+			final float yaw,
+			final float pitch,
+			final double rayDistance,
+			final boolean checkBlocks
+	) {
+		return rayTraceAll(from, world, yaw, pitch, rayDistance, 1.0f, checkBlocks);
 	}
 
 	// WARNING: Isso não chega a ser uma gambiarra, mas meio que isso deve gastar processamento para um caralho ja que
