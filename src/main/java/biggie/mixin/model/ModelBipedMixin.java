@@ -26,14 +26,10 @@ public class ModelBipedMixin {
 	public void setRotationAngles_changeHeadRotation(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn, CallbackInfo ci) {
 		if (entityIn instanceof EntityPlayerSP) {
 			final EntityPlayerSP player = (EntityPlayerSP) entityIn;
-			final float yaw = ServerRotation.getInterpYaw();
 
-			//if (ServerRotation.ROTATE_BODY)
-			//	args.get.rotateAngleY = yaw;
+			player.renderYawOffset = ServerRotation.getInterpYaw();
 
-			final float yawOffset = yaw - ServerRotation.interpYaw(player.renderYawOffset, player.prevRenderYawOffset);
-
-			this.bipedHead.rotateAngleY = (float) Math.toRadians(MathHelper.wrapAngleTo180_float(yawOffset));
+			this.bipedHead.rotateAngleY = 0;
 			this.bipedHead.rotateAngleX = (float) Math.toRadians(ServerRotation.getInterpPitch());
 		}
 	}

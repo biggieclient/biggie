@@ -25,7 +25,7 @@ public class ServerRotation {
 	}
 
 	public static float getInterpYaw() {
-		return LAST_TICK_YAW + MathHelper.wrapAngleTo180_float(DEST_YAW - LAST_TICK_YAW) * timer.renderPartialTicks;
+		return LAST_TICK_YAW + MathHelper.wrapAngleTo180_float(DEST_YAW - LAST_TICK_YAW) * (timer.renderPartialTicks / 1000.0f);
 	}
 
 	public static float getInterpPitch() {
