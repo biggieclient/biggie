@@ -4,11 +4,13 @@ import biggie.event.input.PostPlayerInputEvent;
 import biggie.event.motion.ItemSlowDownEvent;
 import biggie.event.motion.LivingUpdateEvent;
 import biggie.event.motion.MotionEvent;
+import biggie.event.motion.UpdateEvent;
 import biggie.manager.ModuleManager;
 import biggie.module.modules.misc.Scaffold;
 import biggie.util.render.ServerRotation;
 import com.mojang.authlib.GameProfile;
 import net.lenni0451.asmevents.EventManager;
+import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
@@ -380,5 +382,13 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 		EventManager.call(new LivingUpdateEvent(EnumEventType.POST));
 
 		ci.cancel();
+	}
+
+	@Inject(
+			method = "onUpdate",
+			at = @At("HEAD")
+	)
+	public void onUpdate_call(CallbackInfo ci) {
+		EventManager.call(new UpdateEvent(EnumEventType.PRE));
 	}
 }

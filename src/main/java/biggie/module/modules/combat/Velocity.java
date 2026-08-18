@@ -1,7 +1,6 @@
 package biggie.module.modules.combat;
 
 import biggie.event.motion.LivingUpdateEvent;
-import biggie.event.motion.UpdateEvent;
 import biggie.event.network.ReceivePacketEvent;
 import biggie.event.render.RenderTickEvent;
 import biggie.module.Module;

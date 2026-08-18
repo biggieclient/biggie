@@ -1,25 +1,20 @@
 package biggie.module.modules.misc;
 
-import biggie.event.client.TickEvent;
 import biggie.event.input.PostPlayerInputEvent;
-import biggie.event.motion.JumpEvent;
-import biggie.event.motion.LivingUpdateEvent;
-import biggie.event.motion.MotionEvent;
-import biggie.event.motion.StrafeEvent;
+import biggie.event.motion.*;
 import biggie.event.render.RenderTickEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.setting.settings.BooleanSetting;
-import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.ListSetting;
 import biggie.util.math.MathUtil;
 import biggie.util.player.RotationUtil;
-import biggie.util.render.ServerRotation;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockSand;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -29,8 +24,6 @@ import org.lwjgl.input.Keyboard;
 import java.awt.*;
 import java.util.*;
 
-// TODO: Fixar os flag no sprint jump do keep-y no grim.
-// TODO: Fixar os MixinEntitySP não checar se o Scaffold ta ativado ou não na hora de checar sprint.
 public class Scaffold extends Module {
     private final static double MIN_RANDOM_EPS = 0.0006;
 
@@ -46,6 +39,7 @@ public class Scaffold extends Module {
 
     private int keepTicks = 0;
     private boolean keepRot = false;
+    private boolean jump = false;
 
     private int enableSlot = -1;
 
@@ -79,14 +73,21 @@ public class Scaffold extends Module {
     }
 
     @EventTarget
-    public void onTick(TickEvent event) {
-        if (mc.thePlayer == null || mc.theWorld == null)
-            return;
-
+    public void onUpdate(UpdateEvent event) {
         if (event.getType() != EnumEventType.PRE)
             return;
 
-        if (!sprintMode.value.equals("Keep-Y") || mc.gameSettings.keyBindJump.isKeyDown() || mc.thePlayer.posY - 1 < keepY) {
+        if (mc.thePlayer == null || mc.theWorld == null)
+            return;
+
+        final boolean found = findAndSetBlockSlot();
+
+        if (!found) {
+            clearRotation();
+            return;
+        }
+
+        if (!sprintMode.value.equals("Keep-Y") || (mc.gameSettings.keyBindJump.isKeyDown() && !jump) || mc.thePlayer.posY - 1 < keepY) {
             keepY = Double.NaN;
             keepRot = false;
             keepTicks = 0;
@@ -99,10 +100,7 @@ public class Scaffold extends Module {
             }
         }
 
-        if (keepTicks == 1 && mc.thePlayer.onGround)
-            mc.thePlayer.jump();
-
-        if (keepTicks >= 2) {
+        if (keepTicks >= 3) {
             keepTicks = 0;
             keepRot = false;
         }
@@ -142,12 +140,18 @@ public class Scaffold extends Module {
         yaw = RotationUtil.getGCDPatchedYaw(mc, fixedLastYaw, rots[0]);
         pitch = RotationUtil.getGCDPatchedPitch(mc, fixedLastPitch, rots[1]);
 
-        final boolean found = findAndSetBlockSlot();
+        placeBlock(mc.thePlayer.getHeldItem(), targetBlock.facing, targetBlock.blockPos, targetBlock.vecPos.add(targetBlock.relPos));
+    }
 
-        if (!found)
-            return;
-
-        placeBlock(mc.thePlayer.getHeldItem(), targetBlock.facing, targetBlock.blockPos, placeVec);
+    @EventTarget
+    public void onLivingUpdate(LivingUpdateEvent event) {
+        if (event.getType() == EnumEventType.PRE && keepTicks == 2 && mc.thePlayer.onGround) {
+            KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), true);
+            jump = true;
+        } else if (keepTicks == 2) {
+            KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), false);
+            jump = false;
+        }
     }
 
     @EventTarget
@@ -289,6 +293,11 @@ public class Scaffold extends Module {
     }
 
     void placeBlock(final ItemStack itemStack, final EnumFacing facing, final BlockPos blockPos, final Vec3 placeVec) {
+        // final MovingObjectPosition rayTrace =
+        //         RotationUtil.rayTrace(mc.thePlayer, mc.theWorld, yaw, pitch, mc.playerController.getBlockReachDistance());
+        // if (rayTrace == null || rayTrace.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK)
+        //     return;
+
         if (mc.playerController.onPlayerRightClick(mc.thePlayer, mc.theWorld, itemStack, blockPos, facing, placeVec))
             mc.thePlayer.swingItem();
     }
