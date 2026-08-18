@@ -9,10 +9,11 @@ public class ServerRotation {
 	public static float DEST_YAW;
 	public static float DEST_PITCH;
 
+	public static float INTERP_YAW;
+	public static float INTERP_PITCH;
+
 	public static float LAST_TICK_YAW;
 	public static float LAST_TICK_PITCH;
-
-	public static boolean ROTATE_BODY = false;
 
 	public static Timer timer = null;
 
@@ -20,15 +21,19 @@ public class ServerRotation {
 		timer = ReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), "timer", "field_71428_T");
 	}
 
-	public static float interpYaw(final float destYaw, final float lastTickYaw) {
-		return lastTickYaw + MathHelper.wrapAngleTo180_float(destYaw - lastTickYaw) * timer.renderPartialTicks;
+	public static float getInterpYaw(final float progress) {
+		return LAST_TICK_YAW + MathHelper.wrapAngleTo180_float(INTERP_YAW - LAST_TICK_YAW) * progress;
+	}
+
+	public static float getInterpPitch(final float progress) {
+		return LAST_TICK_PITCH + MathHelper.wrapAngleTo180_float(INTERP_PITCH - LAST_TICK_PITCH) * progress;
 	}
 
 	public static float getInterpYaw() {
-		return LAST_TICK_YAW + MathHelper.wrapAngleTo180_float(DEST_YAW - LAST_TICK_YAW) * (timer.renderPartialTicks / 1000.0f);
+		return INTERP_YAW + MathHelper.wrapAngleTo180_float(DEST_YAW - INTERP_YAW) * (0.325f);
 	}
 
 	public static float getInterpPitch() {
-		return LAST_TICK_PITCH + MathHelper.wrapAngleTo180_float(DEST_PITCH - LAST_TICK_PITCH) * timer.renderPartialTicks;
+		return INTERP_PITCH + MathHelper.wrapAngleTo180_float(DEST_PITCH - INTERP_PITCH) * (0.325f);
 	}
 }

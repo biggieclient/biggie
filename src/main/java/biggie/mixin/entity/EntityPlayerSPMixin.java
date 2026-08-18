@@ -7,6 +7,7 @@ import biggie.event.motion.MotionEvent;
 import biggie.event.motion.UpdateEvent;
 import biggie.manager.ModuleManager;
 import biggie.module.modules.misc.Scaffold;
+import biggie.util.player.ChatUtil;
 import biggie.util.render.ServerRotation;
 import com.mojang.authlib.GameProfile;
 import net.lenni0451.asmevents.EventManager;
@@ -142,8 +143,11 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 		if (this.isCurrentViewEntity()) {
 			EventManager.call(preMotionEvent);
 
-			ServerRotation.LAST_TICK_YAW = ServerRotation.DEST_YAW;
-			ServerRotation.LAST_TICK_PITCH = ServerRotation.DEST_PITCH;
+			ServerRotation.LAST_TICK_YAW = ServerRotation.INTERP_YAW;
+			ServerRotation.LAST_TICK_PITCH = ServerRotation.INTERP_PITCH;
+
+			ServerRotation.INTERP_YAW = ServerRotation.getInterpYaw();
+			ServerRotation.INTERP_PITCH = ServerRotation.getInterpPitch();
 
 			ServerRotation.DEST_YAW = preMotionEvent.yaw;
 			ServerRotation.DEST_PITCH = preMotionEvent.pitch;

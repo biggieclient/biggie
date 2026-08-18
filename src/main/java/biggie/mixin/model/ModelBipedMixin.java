@@ -27,10 +27,13 @@ public class ModelBipedMixin {
 		if (entityIn instanceof EntityPlayerSP) {
 			final EntityPlayerSP player = (EntityPlayerSP) entityIn;
 
-			player.renderYawOffset = ServerRotation.getInterpYaw();
+			final float yaw = ServerRotation.getInterpYaw(ServerRotation.timer.renderPartialTicks);
+			final float pitch = ServerRotation.getInterpPitch(ServerRotation.timer.renderPartialTicks);
+
+			player.renderYawOffset = yaw;
 
 			this.bipedHead.rotateAngleY = 0;
-			this.bipedHead.rotateAngleX = (float) Math.toRadians(ServerRotation.getInterpPitch());
+			this.bipedHead.rotateAngleX = (float) Math.toRadians(pitch);
 		}
 	}
 }
