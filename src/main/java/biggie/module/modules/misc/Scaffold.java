@@ -39,7 +39,7 @@ public class Scaffold extends Module {
 
     private int keepTicks = 0;
     private boolean keepRot = false;
-    private boolean jump = false;
+    // private boolean jump = false;
 
     private int enableSlot = -1;
 
@@ -87,7 +87,7 @@ public class Scaffold extends Module {
             return;
         }
 
-        if (!sprintMode.value.equals("Keep-Y") || (mc.gameSettings.keyBindJump.isKeyDown() && !jump) || mc.thePlayer.posY - 1 < keepY) {
+        if (!sprintMode.value.equals("Keep-Y") || (mc.gameSettings.keyBindJump.isKeyDown() /* && !jump */) || mc.thePlayer.posY - 1 < keepY) {
             keepY = Double.NaN;
             keepRot = false;
             keepTicks = 0;
@@ -147,10 +147,10 @@ public class Scaffold extends Module {
     public void onLivingUpdate(LivingUpdateEvent event) {
         if (event.getType() == EnumEventType.PRE && keepTicks == 2 && mc.thePlayer.onGround) {
             KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), true);
-            jump = true;
+            // jump = true;
         } else if (keepTicks == 2) {
             KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), false);
-            jump = false;
+            // jump = false;
         }
     }
 
@@ -193,12 +193,15 @@ public class Scaffold extends Module {
             return;
 
         final float[] fixedMove = RotationUtil.getFixedMove(
-                mc.thePlayer.rotationYaw, yaw,
-                mc.thePlayer.movementInput.moveForward, mc.thePlayer.movementInput.moveStrafe
+                mc.thePlayer,
+                mc.thePlayer.rotationYaw,
+                yaw,
+                mc.thePlayer.movementInput.moveForward,
+                mc.thePlayer.movementInput.moveStrafe
         );
 
-        event.moveForward = fixedMove[0] * ((mc.thePlayer.isSneaking()) ? 0.3f : 1.0f);
-        event.moveStrafe = fixedMove[1] * ((mc.thePlayer.isSneaking()) ? 0.3f : 1.0f);
+        event.moveForward = fixedMove[0];
+        event.moveStrafe = fixedMove[1];
     }
 
     @EventTarget
@@ -293,6 +296,7 @@ public class Scaffold extends Module {
     }
 
     void placeBlock(final ItemStack itemStack, final EnumFacing facing, final BlockPos blockPos, final Vec3 placeVec) {
+        // Raytrace no scaffold, na maioria dos anticheats é inutil.
         // final MovingObjectPosition rayTrace =
         //         RotationUtil.rayTrace(mc.thePlayer, mc.theWorld, yaw, pitch, mc.playerController.getBlockReachDistance());
         // if (rayTrace == null || rayTrace.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK)

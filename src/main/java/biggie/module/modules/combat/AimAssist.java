@@ -15,7 +15,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 // TODO: Adicionar o modo Linear que só soma um passo fixo e o modo Adaptive
-//  que é literalmente o atual que fica mais lerdo ou mais rapido dependendo da distancia da rotação.
+//  que é literalmente o atual que fica mais lerdo ou mais rapido dependendo do gap da rotação.
 public class AimAssist extends Module {
 	private final BooleanSetting horizontal = new BooleanSetting(
 			"Horizontal",
@@ -124,7 +124,7 @@ public class AimAssist extends Module {
 			rots = enRots;
 			target = entity;
 
-			// esse break serve pra pegar o primeiro player que achar, se fizermos um switch vamos ter que tirar.
+			// esse break serve pra pegar o primeiro player que achar, se fizermos um switch vamo ter que tirar.
 			break;
 		}
 

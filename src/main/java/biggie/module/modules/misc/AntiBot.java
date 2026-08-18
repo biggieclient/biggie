@@ -5,7 +5,6 @@ import biggie.event.client.TickEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.setting.settings.DoubleSetting;
-import biggie.util.player.ChatUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.entity.player.EntityPlayer;

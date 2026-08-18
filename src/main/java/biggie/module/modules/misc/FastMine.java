@@ -6,6 +6,8 @@ import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.ListSetting;
 import org.lwjgl.input.Keyboard;
 
+// TODO: Fazer ele quebrar não tão rapido conforme você aumenta a speed,
+//  não sei e não quero saber como block break do mine funciona, fodase.
 public class FastMine extends Module {
 	public final ListSetting mode = new ListSetting(
 			"Mode",

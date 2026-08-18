@@ -14,12 +14,10 @@ public class ClickGuiModule extends Module {
 
 	@Override
 	public void onEnable() {
-		if (clickGui == null) {
+		if (clickGui == null)
 			clickGui = new ClickGui();
-		}
 
 		mc.displayGuiScreen(clickGui);
-
 		setEnabled(false);
 	}
 }

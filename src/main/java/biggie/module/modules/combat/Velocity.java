@@ -49,37 +49,36 @@ public class Velocity extends Module {
 
 	@EventTarget(noParamEvents = RenderTickEvent.class)
 	public void onRenderTick() {
-		if (mc.theWorld != null && mc.thePlayer != null) {
-			if (receivedDamage) {
-				if (mode.value.equals("MinemenAir")) {
-					if (!mc.thePlayer.onGround) {
-						ticksInAir++;
-					}
+		if (mc.theWorld == null || mc.thePlayer == null) {
+			receivedDamage = false;
+			ticksInAir = 0;
+			return;
+		}
 
-					if (ticksInAir >= airTicks.value) {
-						mc.thePlayer.motionX = 0;
-						mc.thePlayer.motionZ = 0;
+		if (!receivedDamage)
+			return;
 
-						ticksInAir = 0;
-						receivedDamage = false;
-					}
-				}
-			}
-		} else {
-			if (receivedDamage) {
+		if (mode.value.equals("MinemenAir")) {
+			if (!mc.thePlayer.onGround)
+				ticksInAir++;
+
+			if (ticksInAir >= airTicks.value) {
+				mc.thePlayer.motionX = 0;
+				mc.thePlayer.motionZ = 0;
+
+				ticksInAir = 0;
 				receivedDamage = false;
 			}
-
-			ticksInAir = 0;
 		}
 	}
 
 	@EventTarget
 	public void onReceivePacket(ReceivePacketEvent event) {
-		if (event.packet instanceof S12PacketEntityVelocity && !event.isCancelled()) {
-			if (((S12PacketEntityVelocity) event.packet).getEntityID() == mc.thePlayer.getEntityId())
-				receivedDamage = true;
-		}
+		if (!(event.packet instanceof S12PacketEntityVelocity) || event.isCancelled())
+			return;
+
+		if (((S12PacketEntityVelocity) event.packet).getEntityID() == mc.thePlayer.getEntityId())
+			receivedDamage = true;
 	}
 
 	@EventTarget

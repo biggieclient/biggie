@@ -64,8 +64,8 @@ public class LeftClicker extends Module {
 	private long lastMs;
 	private boolean holding;
 
-	// TODO: Caso o player esteja holdando o left click e esteja mirando num bloco, fazer ele
-	//  pressionar o left click denovo pra não cancelar o break caso voce mire num bloco enquanto o clicker ta funcionando.
+	// TODO: Caso o player esteja segurando o botão esquerdo e esteja mirando num bloco, fazer ele
+	//  pressionar o botão esquerdo denovo pra não cancelar o break quando voce mirar num bloco enquanto o clicker ta funcionando.
 
 	public LeftClicker() {
 		super("LeftClicker", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
@@ -83,7 +83,6 @@ public class LeftClicker extends Module {
 
 		if (holding) {
 			KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), false);
-
 			holding = false;
 		}
 	}
@@ -95,57 +94,56 @@ public class LeftClicker extends Module {
 
 	@EventTarget(noParamEvents = GameLoopEvent.class)
 	public void onGameLoop() {
+		if (mc.theWorld == null || mc.thePlayer == null)
+			return;
+
 		long delay = 0;
 		final long currTime = System.currentTimeMillis();
 		final int attackKey = mc.gameSettings.keyBindAttack.getKeyCode();
 
-		if (mc.theWorld != null && mc.thePlayer != null) {
-			if (mc.currentScreen == null) {
-				switch (randomizerType.value) {
-					case "Random":
-						delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * random.nextDouble()));
+		if (mc.currentScreen != null) {
+			KeyBinding.setKeyBindState(attackKey, false);
+			MouseUtil.setButtonState(attackKey + 100, false);
 
-						break;
-					case "Gaussian":
-						final double factor = reverse.value ? (1 - MathHelper.clamp_double(0.5 + random.nextGaussian() * 0.15, 0, 1)) : MathHelper.clamp_double(0.5 + random.nextGaussian() * 0.15, 0, 1);
-
-						delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * (factor)));
-
-						break;
-					case "Constant":
-						delay = (long) 1000 / cps.value;
-
-						break;
-				}
-
-				if (holding) {
-					KeyBinding.setKeyBindState(attackKey, false);
-					MouseUtil.setButtonState(attackKey + 100, false);
-
-					holding = false;
-					return;
-				}
-				final boolean canClick = mc.objectMouseOver.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK;
-
-				if (Mouse.isButtonDown(attackKey + 100)) {
-					if (currTime - lastMs >= delay && canClick) {
-						KeyBinding.setKeyBindState(attackKey, true);
-						KeyBinding.onTick(attackKey);
-
-						MouseUtil.setButtonState(attackKey + 100, true);
-
-						lastMs = currTime;
-						holding = true;
-					}
-				}
-			} else {
-				if (holding) {
-					KeyBinding.setKeyBindState(attackKey, false);
-					MouseUtil.setButtonState(attackKey + 100, false);
-
-					holding = false;
-				}
-			}
+			holding = false;
+			return;
 		}
+
+		switch (randomizerType.value) {
+			case "Random":
+				delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * random.nextDouble()));
+				break;
+			case "Gaussian":
+				final double factor = reverse.value ? (1 - MathHelper.clamp_double(0.5 + random.nextGaussian() * 0.15, 0, 1)) : MathHelper.clamp_double(0.5 + random.nextGaussian() * 0.15, 0, 1);
+				delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * (factor)));
+				break;
+			case "Constant":
+				delay = (long) 1000 / cps.value;
+				break;
+		}
+
+		if (holding) {
+			KeyBinding.setKeyBindState(attackKey, false);
+			MouseUtil.setButtonState(attackKey + 100, false);
+
+			holding = false;
+			return;
+		}
+
+		final boolean canClick = mc.objectMouseOver.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK;
+
+		if (!Mouse.isButtonDown(attackKey + 100))
+			return;
+
+		if (currTime - lastMs < delay || !canClick)
+			return;
+
+		KeyBinding.setKeyBindState(attackKey, true);
+		KeyBinding.onTick(attackKey);
+
+		MouseUtil.setButtonState(attackKey + 100, true);
+
+		lastMs = currTime;
+		holding = true;
 	}
 }

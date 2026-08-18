@@ -34,21 +34,23 @@ public class MoreKB extends Module {
 
 	@EventTarget
 	public void onAttack(AttackEvent event) {
-		if (event.getType() == EnumEventType.PRE) {
-			attacked = true;
-		}
+		if (event.getType() != EnumEventType.PRE)
+			return;
+
+		attacked = true;
 	}
 
 	@EventTarget()
 	public void onLivingUpdate(LivingUpdateEvent event) {
-		if (attacked) {
-			if (event.getType() == EnumEventType.PRE) {
-				if (mode.value.equals("Left")) {
-					mc.thePlayer.sprintingTicksLeft = 1;
+		if (!attacked)
+			return;
 
-					attacked = false;
-				}
-			}
+		if (event.getType() != EnumEventType.PRE)
+			return;
+
+		if (mode.value.equals("Left")) {
+			mc.thePlayer.sprintingTicksLeft = 1;
+			attacked = false;
 		}
 	}
 }

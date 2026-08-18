@@ -14,15 +14,15 @@ public class Sprint extends Module {
 
 	@Override
 	public void onDisable() {
-		if (mc.gameSettings.keyBindSprint.isKeyDown()) {
+		if (mc.gameSettings.keyBindSprint.isKeyDown())
 			KeyBinding.setKeyBindState(mc.gameSettings.keyBindSprint.getKeyCode(), false);
-		}
 	}
 
 	@EventTarget(noParamEvents = GameLoopEvent.class)
 	public void onGameLoop() {
-		if (mc.theWorld != null && mc.thePlayer != null) {
-			KeyBinding.setKeyBindState(mc.gameSettings.keyBindSprint.getKeyCode(), true);
-		}
+		if (mc.theWorld == null || mc.thePlayer == null)
+			return;
+
+		KeyBinding.setKeyBindState(mc.gameSettings.keyBindSprint.getKeyCode(), true);
 	}
 }

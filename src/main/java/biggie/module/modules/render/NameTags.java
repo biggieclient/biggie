@@ -13,7 +13,7 @@ import net.minecraft.util.Vec3;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
-// TODO: Adicionar e implementar isso
+// TODO: Terminar isso algum dia.
 public class NameTags extends Module {
     public NameTags() {
         super("NameTags", ModuleCategory.RENDER, Keyboard.KEY_NONE);

@@ -87,12 +87,12 @@ public class KillAura extends Module {
 
 		final boolean shouldBlock =
 				findTargets(((attackRange.value * 2) * (attackRange.value * 2)), blockRange.value * blockRange.value) &&
-						currItem != null &&
-						currItem.getItem() instanceof ItemSword;
+				currItem != null &&
+				currItem.getItem() instanceof ItemSword;
 		final boolean shouldAttack = currTime - attackMs >= (1000.0f / aps.value);
 		final boolean shouldSwitch = currTime - switchMs > switchDelay.value && targetMode.value.equals("Switch");
 
-		// TODO: Handle Block.
+		// TODO: Lidar com o block.
 
 		if (targets.isEmpty()) {
 			clearTargetAndRotations(false);
@@ -151,12 +151,15 @@ public class KillAura extends Module {
 			return;
 
 		final float[] fixedMove = RotationUtil.getFixedMove(
-				mc.thePlayer.rotationYaw, yaw,
-				mc.thePlayer.movementInput.moveForward, mc.thePlayer.movementInput.moveStrafe
+				mc.thePlayer,
+				mc.thePlayer.rotationYaw,
+				yaw,
+				mc.thePlayer.movementInput.moveForward,
+				mc.thePlayer.movementInput.moveStrafe
 		);
 
-		event.moveForward = fixedMove[0] * ((mc.thePlayer.isSneaking()) ? 0.3f : 1.0f);
-		event.moveStrafe = fixedMove[1] * ((mc.thePlayer.isSneaking()) ? 0.3f : 1.0f);
+		event.moveForward = fixedMove[0];
+		event.moveStrafe = fixedMove[1];
 	}
 
 	@EventTarget
@@ -211,6 +214,8 @@ public class KillAura extends Module {
 		return true;
 	}
 
+	// WARNING: Esse 'shouldRayTrace' é meio inutil porque não tem nenhuma opção pra usar ou não, mas fodase
+	// acho que não usar isso fica meio injogavel porque o range não considera a boundingBox do mano.
 	boolean updateRotations(final EntityLivingBase target, final boolean shouldRayTrace) {
 		final float fixedLastYaw = Float.isNaN(yaw) ? mc.thePlayer.rotationYaw : yaw;
 		final float fixedLastPitch = Float.isNaN(pitch) ? mc.thePlayer.rotationPitch : pitch;

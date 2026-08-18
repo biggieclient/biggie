@@ -189,9 +189,9 @@ public class RotationUtil {
 		return rayTraceAll(from, world, yaw, pitch, rayDistance, 1.0f, checkBlocks);
 	}
 
-	// WARNING: Isso não chega a ser uma gambiarra, mas meio que isso deve gastar processamento para um caralho ja que
+	// WARNING: Isso não é uma gambiarra, mas meio que isso deve gastar processamento para um caralho ja que
 	// faz um dot product pra cada combinação de movement pra achar o vetor mais parecido com o do client usando o yaw do server.
-	public static float[] getFixedMove(float clientYaw, float serverYaw, float  clientForward, float clientStrafe) {
+	public static float[] getFixedMove(final EntityPlayer from, final float clientYaw, final float serverYaw, final float  clientForward, final float clientStrafe) {
 		if (clientForward == 0 && clientStrafe == 0)
 			return new float[] { 0, 0 };
 
@@ -230,6 +230,8 @@ public class RotationUtil {
 			}
 		}
 
-		return new float[] { finalForward, finalStrafe };
+		final float factor = from.isSneaking() ? 0.3f : 1.0f;
+
+		return new float[] { finalForward * factor , finalStrafe * factor };
 	}
 }
