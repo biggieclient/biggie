@@ -127,26 +127,27 @@ public class BackTrack extends Module {
 			return;
 
         for (PacketData data : packets) {
-			if (currTime - data.receiveTime > delay.value) {
-				if (data.packet instanceof S0CPacketSpawnPlayer) {
-					final S0CPacketSpawnPlayer S0C = (S0CPacketSpawnPlayer) data.packet;
+			if (currTime - data.receiveTime < delay.value)
+				continue;
 
-					if (mc.theWorld.getEntityByID(S0C.getEntityID()) == null) {
-						packets.remove(data);
-						continue;
-					}
+			if (data.packet instanceof S0CPacketSpawnPlayer) {
+				final S0CPacketSpawnPlayer S0C = (S0CPacketSpawnPlayer) data.packet;
+
+				if (mc.theWorld.getEntityByID(S0C.getEntityID()) == null) {
+					packets.remove(data);
+					continue;
 				}
+			}
 
-				if (data.packet instanceof S12PacketEntityVelocity) {
-					final S12PacketEntityVelocity S12 = (S12PacketEntityVelocity) data.packet;
+			if (data.packet instanceof S12PacketEntityVelocity) {
+				final S12PacketEntityVelocity S12 = (S12PacketEntityVelocity) data.packet;
 
-					if (S12.getEntityID() == mc.thePlayer.getEntityId())
-						ModuleManager.getModule(Velocity.class).receivedDamage = true;
-				}
+				if (S12.getEntityID() == mc.thePlayer.getEntityId())
+					ModuleManager.getModule(Velocity.class).receivedDamage = true;
+			}
 
-				PacketUtil.receivePacket(data.packet);
-                packets.remove(data);
-            }
+			PacketUtil.receivePacket(data.packet);
+			packets.remove(data);
         }
 	}
 
@@ -198,11 +199,11 @@ public class BackTrack extends Module {
 			return;
 
 		if (
+				(event.packet instanceof S00PacketKeepAlive && !cancelKeepAlive.value) ||
 				event.packet instanceof S02PacketChat                                  ||
 				event.packet instanceof S29PacketSoundEffect                           ||
 				(event.packet instanceof S01PacketPong && !cancelPong.value)           ||
-				event.packet instanceof S06PacketUpdateHealth                          ||
-				(event.packet instanceof S00PacketKeepAlive && !cancelKeepAlive.value)
+				event.packet instanceof S06PacketUpdateHealth
 		)
 			return;
 
@@ -220,10 +221,11 @@ public class BackTrack extends Module {
 			final S13PacketDestroyEntities packet = (S13PacketDestroyEntities) event.packet;
 
 			for (int id : packet.getEntityIDs()) {
-				if (id == target.getEntityId()) {
-					target = null;
-					flushPackets();
-				}
+				if (id != target.getEntityId())
+					continue;
+
+				target = null;
+				flushPackets();
 			}
 
 			return;
@@ -236,9 +238,8 @@ public class BackTrack extends Module {
 			final S14PacketEntity packet = ((S14PacketEntity) event.packet);
 			final Entity entity = packet.getEntity(mc.theWorld);
 
-			if (!(entity instanceof EntityLivingBase)) {
+			if (!(entity instanceof EntityLivingBase))
 				return;
-			}
 
 			if (entity == target) {
 				final PosData data = posCache.get(entity);
@@ -266,9 +267,8 @@ public class BackTrack extends Module {
 			final S18PacketEntityTeleport packet = (S18PacketEntityTeleport) event.packet;
 			final Entity entity = mc.theWorld.getEntityByID(packet.getEntityId());
 
-			if (!(entity instanceof EntityLivingBase)) {
+			if (!(entity instanceof EntityLivingBase))
 				return;
-			}
 
 			if (entity == target) {
 				final PosData data = posCache.get(entity);
