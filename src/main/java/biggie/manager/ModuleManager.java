@@ -34,6 +34,7 @@ public class ModuleManager {
 				new FastMine(),
 				new Scaffold(),
 				new FastPlace(),
+				new AntiBot(),
 
 				// movement modules
 				new NoItemSlow(),

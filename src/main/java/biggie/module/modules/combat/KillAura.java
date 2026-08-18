@@ -7,6 +7,7 @@ import biggie.event.motion.MotionEvent;
 import biggie.event.motion.StrafeEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
+import biggie.module.modules.misc.AntiBot;
 import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.ListSetting;
@@ -38,6 +39,7 @@ public class KillAura extends Module {
 	private final ListSetting blockMode = new ListSetting("Block", "Pre", "None", "Pre", "Post");
 	private final DoubleSetting blockRange = new DoubleSetting("Block Range", 3, 3, 6, 0.05);
 
+	private final BooleanSetting teamsCheck = new BooleanSetting("Teams Check", true);
 	private final BooleanSetting throughBlocks = new BooleanSetting("Through Blocks", true);
 	private final BooleanSetting moveFix = new BooleanSetting("Movement Fix", true);
 
@@ -264,9 +266,6 @@ public class KillAura extends Module {
 		boolean shouldBlock = false;
 
 		for (final Entity en : mc.theWorld.loadedEntityList) {
-			if (!(en instanceof EntityLivingBase))
-				continue;
-
 			if (!(en instanceof EntityPlayer))
 				continue;
 
@@ -274,6 +273,14 @@ public class KillAura extends Module {
 				continue;
 
 			if (en.isDead)
+				continue;
+
+			final EntityLivingBase enLivingBase = (EntityLivingBase) en;
+
+			if (enLivingBase.isOnSameTeam(mc.thePlayer) && teamsCheck.value)
+				continue;
+
+			if (AntiBot.botList.contains(enLivingBase))
 				continue;
 
 			final double module = en.getDistanceSq(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ);
@@ -284,7 +291,7 @@ public class KillAura extends Module {
 			if (module > sqAttackRange)
 				continue;
 
-			targets.add((EntityLivingBase) en);
+			targets.add(enLivingBase);
 		}
 
 		return shouldBlock;
