@@ -1,22 +1,30 @@
 package biggie.module.modules.combat;
 
+import biggie.event.client.GameLoopEvent;
+import biggie.event.client.TickEvent;
 import biggie.event.render.RenderTickEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.DoubleSetting;
+import biggie.setting.settings.ListSetting;
+import biggie.util.math.MathUtil;
 import biggie.util.player.RotationUtil;
 import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
+import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.MovingObjectPosition;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 // TODO: Adicionar o modo Linear que só soma um passo fixo e o modo Adaptive
 //  que é literalmente o atual que fica mais lerdo ou mais rapido dependendo do gap da rotação.
 public class AimAssist extends Module {
+	private final ListSetting mode = new ListSetting("Mode", "Recursive", "Linear", "Exponential");
+
 	private final BooleanSetting horizontal = new BooleanSetting(
 			"Horizontal",
 			true
@@ -64,8 +72,8 @@ public class AimAssist extends Module {
 			true
 	);
 
-	private final BooleanSetting throughBlocks = new BooleanSetting(
-			"Through Blocks",
+	private final BooleanSetting breakBlocks = new BooleanSetting(
+			"Break Blocks",
 			false
 	);
 
@@ -82,73 +90,92 @@ public class AimAssist extends Module {
 		rots = null;
 	}
 
-	@EventTarget(noParamEvents = RenderTickEvent.class)
-	public void onRenderTick() {
-		if (mc.theWorld == null || mc.thePlayer == null) {
-			target = null;
-			rots = null;
+	@EventTarget
+	public void onTick(TickEvent event) {
+		if (event.getType() != EnumEventType.PRE)
+			return;
+
+		if (mc.theWorld == null || mc.thePlayer == null || mc.currentScreen != null) {
+			clearTargetAndRots();
+			return;
+		}
+
+		if (clickOnly.value && !Mouse.isButtonDown(mc.gameSettings.keyBindAttack.getKeyCode() + 100)) {
+			clearTargetAndRots();
+			return;
+		}
+
+		if (breakBlocks.value && mc.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+			clearTargetAndRots();
 			return;
 		}
 
 		final double sqRange = range.value * range.value;
 
-		if (clickOnly.value && !Mouse.isButtonDown(mc.gameSettings.keyBindAttack.getKeyCode() + 100))
-			return;
-
-		final float lastYaw = mc.thePlayer.rotationYaw;
-		final float lastPitch = mc.thePlayer.rotationPitch;
-
-		for (Entity entity : mc.theWorld.loadedEntityList) {
-			if (!(entity instanceof EntityLivingBase))
+		for (final Entity en : mc.theWorld.loadedEntityList) {
+			if (!(en instanceof EntityLivingBase))
 				continue;
 
-			if (entity == mc.thePlayer)
+			if (en == mc.thePlayer)
 				continue;
 
-			if (entity.isDead)
+			if (en.isDead)
 				continue;
 
-			if (mc.thePlayer.getDistanceSqToEntity(entity) > sqRange)
+			if (mc.thePlayer.getDistanceSqToEntity(en) > sqRange)
 				continue;
+
+			final double bestTargetRelY = RotationUtil.getBestTargetRelY(mc.thePlayer, (EntityLivingBase) en);
 
 			final float[] enRots = RotationUtil.getRotationTo(
 					mc.thePlayer,
-					entity.posX,
-					entity.posY + entity.getEyeHeight() * 0.5,
-					entity.posZ
+					en.posX,
+					en.posY + bestTargetRelY,
+					en.posZ
 			);
 
-			if (!RotationUtil.isInFOV(lastYaw, enRots[0], fov.value.floatValue()))
+			if (!RotationUtil.isInFOV(mc.thePlayer.rotationYaw, enRots[0], fov.value.floatValue()))
 				continue;
 
 			rots = enRots;
-			target = entity;
+			target = en;
 
-			// esse break serve pra pegar o primeiro player que achar, se fizermos um switch vamo ter que tirar.
-			break;
+			// esse return serve pra pegar o primeiro player que achar, se fizermos um switch vamo ter que tirar.
+			return;
 		}
+
+		clearTargetAndRots();
+	}
+
+	@EventTarget(noParamEvents = GameLoopEvent.class)
+	public void onGameLoop() {
+		if (mc.theWorld == null || mc.thePlayer == null || mc.currentScreen != null)
+			return;
 
 		if (target == null)
 			return;
 
-		final float gcd = (float) Math.pow(mc.gameSettings.mouseSensitivity * 0.6f + 0.2f, 3f) * 1.2f;
+		final float yaw = RotationUtil.getGCDPatchedYaw(mc, mc.thePlayer.rotationYaw, rots[0]);
+		final float pitch = RotationUtil.getGCDPatchedYaw(mc, mc.thePlayer.rotationPitch, rots[1]);
 
-		final float deltaYaw = rots[0] - lastYaw;
-		final float patchedDeltaYaw = MathHelper.wrapAngleTo180_float(Math.round(deltaYaw / gcd) * gcd);
+		if (horizontal.value) {
+			if (mode.value.equals("Exponential")) {
+				mc.thePlayer.rotationYaw = RotationUtil.getInterpRot(mc.thePlayer.rotationYaw, yaw, (float) (speed.value / (smooth.value * 10)));
+			} else if (mode.value.equals("Linear")) {
+				mc.thePlayer.rotationYaw += MathUtil.getLinearStep(mc.thePlayer.rotationYaw, yaw, (float) (speed.value / (smooth.value * 10)));
+			}
+		}
 
-		final float yaw = lastYaw + patchedDeltaYaw;
+		if (vertical.value) {
+			if (mode.value.equals("Exponential")) {
+				mc.thePlayer.rotationPitch = RotationUtil.getInterpRot(mc.thePlayer.rotationPitch, pitch, (float) (speed.value / (smooth.value * 20)));
+			} else if (mode.value.equals("Linear")) {
+				mc.thePlayer.rotationPitch += MathUtil.getLinearStep(mc.thePlayer.rotationPitch, pitch, (float) (speed.value / (smooth.value * 8)));
+			}
+		}
+	}
 
-		final float deltaPitch = rots[1] - lastPitch;
-		final float patchedDeltaPitch = MathHelper.clamp_float(MathHelper.wrapAngleTo180_float(Math.round(deltaPitch / gcd) * gcd), -90, 90);
-
-		final float pitch = lastPitch + patchedDeltaPitch;
-
-		if (horizontal.value)
-			mc.thePlayer.rotationYaw = (float) RenderUtil.interpPos(yaw, lastYaw, (float) ((speed.value) / (smooth.value * 10)));
-
-		if (vertical.value)
-			mc.thePlayer.rotationPitch = (float) RenderUtil.interpPos(pitch, lastPitch, (float) ((speed.value) / (smooth.value * 10)));
-
+	void clearTargetAndRots() {
 		target = null;
 		rots = null;
 	}

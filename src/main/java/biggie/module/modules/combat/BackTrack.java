@@ -197,13 +197,11 @@ public class BackTrack extends Module {
 		)
 			return;
 
-		if (event.packet instanceof S19PacketEntityStatus) {
+		if (event.packet instanceof S19PacketEntityStatus)
 			return;
-		}
 
-		if (event.packet instanceof S0CPacketSpawnPlayer || event.packet instanceof S0FPacketSpawnMob) {
+		if (event.packet instanceof S0CPacketSpawnPlayer || event.packet instanceof S0FPacketSpawnMob)
 			return;
-		}
 
 		if (event.packet instanceof S08PacketPlayerPosLook) {
 			target = null;

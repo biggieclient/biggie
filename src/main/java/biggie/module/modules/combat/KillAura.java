@@ -70,19 +70,7 @@ public class KillAura extends Module {
 	@Override
 	public void onDisable() {
 		clearTargetAndRotations(true);
-
-		block = false;
-
-		if (blocking) {
-			PacketUtil.sendPacketNoEvent(new C07PacketPlayerDigging(
-					C07PacketPlayerDigging.Action.RELEASE_USE_ITEM,
-					BlockPos.ORIGIN,
-					EnumFacing.DOWN
-			));
-			((EntityPlayerAccessor) mc.thePlayer).setItemInUseCount(0);
-
-			blocking = false;
-		}
+		unblock();
 	}
 
 	@Override
@@ -114,20 +102,6 @@ public class KillAura extends Module {
 				currItem != null &&
 				currItem.getItem() instanceof ItemSword &&
 				!blockMode.value.equals("None");
-
-		if (!block) {
-			if (blocking) {
-				PacketUtil.sendPacketNoEvent(new C07PacketPlayerDigging(
-						C07PacketPlayerDigging.Action.RELEASE_USE_ITEM,
-						BlockPos.ORIGIN,
-						EnumFacing.DOWN
-				));
-
-				((EntityPlayerAccessor) mc.thePlayer).setItemInUseCount(0);
-
-				blocking = false;
-			}
-		}
 
 		if (targets.isEmpty()) {
 			clearTargetAndRotations(false);
@@ -198,25 +172,14 @@ public class KillAura extends Module {
 
 	@EventTarget
 	public void onUpdate(UpdateEvent event) {
-		if (event.getType() == EnumEventType.PRE) {
-			if (blockMode.value.equals("Interact")) {
-				if (block) {
-					if (target != null) {
-						PacketUtil.sendPacketNoEvent(new C02PacketUseEntity(
-								target,
-								C02PacketUseEntity.Action.INTERACT
-						));
+		if (event.getType() != EnumEventType.PRE)
+			return;
 
-						PacketUtil.sendPacketNoEvent(new C08PacketPlayerBlockPlacement(
-								mc.thePlayer.getHeldItem()
-						));
-					}
-
-					((EntityPlayerAccessor) mc.thePlayer).setItemInUseCount(1);
-
-					blocking = true;
-					block = false;
-				}
+		if (blockMode.value.equals("Interact")) {
+			if (block) {
+				block();
+			} else if (blocking) {
+				unblock();
 			}
 		}
 	}
@@ -301,6 +264,36 @@ public class KillAura extends Module {
 		pitch = patchedPitch;
 
 		return true;
+	}
+
+	void block() {
+		if (target != null) {
+			PacketUtil.sendPacketNoEvent(new C02PacketUseEntity(
+					target,
+					C02PacketUseEntity.Action.INTERACT
+			));
+
+			PacketUtil.sendPacketNoEvent(new C08PacketPlayerBlockPlacement(
+					mc.thePlayer.getHeldItem()
+			));
+		}
+
+		((EntityPlayerAccessor) mc.thePlayer).setItemInUseCount(1);
+
+		blocking = true;
+		block = false;
+	}
+
+	void unblock() {
+		PacketUtil.sendPacketNoEvent(new C07PacketPlayerDigging(
+				C07PacketPlayerDigging.Action.RELEASE_USE_ITEM,
+				BlockPos.ORIGIN,
+				EnumFacing.DOWN
+		));
+
+		((EntityPlayerAccessor) mc.thePlayer).setItemInUseCount(0);
+		blocking = false;
+		block = false;
 	}
 
 	void clearTargetAndRotations(final boolean delays) {

@@ -5,6 +5,7 @@ import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.ListSetting;
+import biggie.util.math.MathUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import org.lwjgl.input.Keyboard;
@@ -20,30 +21,31 @@ public class Speed extends Module {
 
 	@EventTarget
 	public void onTick(LivingUpdateEvent event) {
-		if (event.getType() == EnumEventType.PRE) {
-			if (mc.thePlayer == null || mc.theWorld == null)
+		if (event.getType() != EnumEventType.PRE)
+			return;
+
+		if (mc.thePlayer == null || mc.theWorld == null)
+			return;
+
+		if (mode.value.equals("Strafe")) {
+			double moveForward = mc.thePlayer.movementInput.moveForward;
+			double moveStrafe = mc.thePlayer.movementInput.moveStrafe;
+
+			if (moveStrafe == 0 && moveForward == 0)
 				return;
 
-			if (mode.value.equals("Strafe")) {
-				double radYaw = Math.toRadians(mc.thePlayer.rotationYaw);
+			final double invDist = 1.0f / MathUtil.getModule(moveStrafe, 0, moveForward);
 
-				double moveForward = mc.thePlayer.movementInput.moveForward;
-				double moveStrafe = mc.thePlayer.movementInput.moveStrafe;
+			moveForward *= invDist;
+			moveStrafe *= invDist;
 
-				if (moveStrafe == 0 && moveForward == 0)
-					return;
+			final double[] move = MathUtil.getMovementFromYawAndInput(mc.thePlayer.rotationYaw, moveForward, moveStrafe, speed.value);
 
-				if (mc.thePlayer.onGround)
-					mc.thePlayer.motionY = jumpMotion.value;
+			mc.thePlayer.motionX = move[0];
+			mc.thePlayer.motionZ = move[1];
 
-				final double invDist = 1 / Math.sqrt((moveForward * moveForward) + (moveStrafe * moveStrafe));
-
-				moveForward *= invDist;
-				moveStrafe *= invDist;
-
-				mc.thePlayer.motionX = (-Math.sin(radYaw) * speed.value * moveForward) + (Math.cos(radYaw) * speed.value * moveStrafe);
-				mc.thePlayer.motionZ = (Math.cos(radYaw) * speed.value * moveForward) + (Math.sin(radYaw) * speed.value * moveStrafe);
-			}
+			if (mc.thePlayer.onGround)
+				mc.thePlayer.motionY = jumpMotion.value;
 		}
 	}
 }

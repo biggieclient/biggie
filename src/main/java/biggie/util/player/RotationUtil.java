@@ -41,12 +41,12 @@ public class RotationUtil {
 		return new float[] { yaw, pitch };
 	}
 
-	public static float getInterpYaw(final float yaw, final float destYaw, final float progress) {
+	public static float getInterpRot(final float yaw, final float destYaw, final float progress) {
 		final float patchedDeltaYaw = MathHelper.wrapAngleTo180_float(destYaw - yaw);
 		return yaw + patchedDeltaYaw * progress;
 	}
 
-	public static float getInterpYaw(final float yaw, final float destYaw) {
+	public static float getInterpRot(final float yaw, final float destYaw) {
 		final float patchedDeltaYaw = MathHelper.wrapAngleTo180_float(destYaw - yaw);
 		return yaw + patchedDeltaYaw * ServerRotation.timer.renderPartialTicks;
 	}
@@ -195,43 +195,43 @@ public class RotationUtil {
 		if (clientForward == 0 && clientStrafe == 0)
 			return new float[] { 0, 0 };
 
-		final float serverRadYaw = (float) Math.toRadians(serverYaw);
-		final float clientRadYaw = (float) Math.toRadians(clientYaw);
+		final float[] clientMove = MathUtil.getMovementFromYawAndInput(clientYaw, clientForward, clientStrafe, 1.0f);
 
-		float clientX = ((float) -Math.sin(clientRadYaw) * clientForward) + ((float) Math.cos(clientRadYaw) * clientStrafe);
-		float clientZ = ((float) Math.cos(clientRadYaw) * clientForward) + ((float) Math.sin(clientRadYaw) * clientStrafe);
+		float clientX = clientMove[0];
+		float clientZ = clientMove[1];
 
-		final float clientInvSize = 1 / (float) Math.sqrt((clientX * clientX) + (clientZ * clientZ));
+		final float clientInvSize = 1.0f / MathUtil.getModule(clientX, 0, clientZ);
 
 		clientX *= clientInvSize;
 		clientZ *= clientInvSize;
 
-		float finalDot = Float.NaN;
-		float finalForward = 0;
-		float finalStrafe = 0;
+		float closestDot = Float.NaN;
+		float closestForward = 0;
+		float closestStrafe = 0;
 
 		for (int forward = -1; forward <= 1; ++forward) {
 			for (int strafe = -1; strafe <= 1; ++strafe) {
 				if (forward == 0 && strafe == 0)
 					continue;
 
-				final float dX = ((float) -Math.sin(serverRadYaw) * forward) + ((float) Math.cos(serverRadYaw) * strafe);
-				final float dZ = ((float) Math.cos(serverRadYaw) * forward) + ((float) Math.sin(serverRadYaw) * strafe);
+				final float[] tryMove = MathUtil.getMovementFromYawAndInput(serverYaw, forward, strafe, 1.0f);
 
-				final float invSize = 1 / (float) Math.sqrt((dX * dX) + (dZ * dZ));
+				final float serverX = tryMove[0];
+				final float serverZ = tryMove[1];
 
-				final float currDot = ((dX * invSize) * clientX) + ((dZ * invSize) * clientZ);
+				final float invSize = 1.0f / MathUtil.getModule(serverX, 0, serverZ);
 
-				if (currDot > finalDot || Double.isNaN(finalDot)) {
-					finalForward = forward;
-					finalStrafe = strafe;
-					finalDot = currDot;
+				final float currDot = ((serverX * invSize) * clientX) + ((serverZ * invSize) * clientZ);
+
+				if (currDot > closestDot || Double.isNaN(closestDot)) {
+					closestForward = forward;
+					closestStrafe = strafe;
+					closestDot = currDot;
 				}
 			}
 		}
 
 		final float factor = from.isSneaking() ? 0.3f : 1.0f;
-
-		return new float[] { finalForward * factor , finalStrafe * factor };
+		return new float[] { closestForward * factor , closestStrafe * factor };
 	}
 }
