@@ -1,9 +1,12 @@
 package biggie.mixin.entity;
 
 import biggie.manager.ModuleManager;
+import biggie.module.modules.combat.KillAura;
 import biggie.module.modules.misc.NoBreakSlow;
+import biggie.util.player.ChatUtil;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -44,6 +47,21 @@ public abstract class EntityPlayerMixin extends EntityLivingBase {
 			}
 
 			cir.setReturnValue(breakSpeed);
+		}
+	}
+
+	@Inject(
+			method = "isBlocking",
+			at = @At("HEAD"),
+			cancellable = true
+	)
+	public void isBlocking_clientBlock(CallbackInfoReturnable<Boolean> cir) {
+		if ((Object) this instanceof EntityPlayerSP) {
+			KillAura killAura = ModuleManager.getModule(KillAura.class);
+
+			if (killAura.isEnabled() && killAura.blocking) {
+				cir.setReturnValue(true);
+			}
 		}
 	}
 }

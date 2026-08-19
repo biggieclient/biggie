@@ -5,15 +5,17 @@ import biggie.event.input.PostPlayerInputEvent;
 import biggie.event.motion.JumpEvent;
 import biggie.event.motion.MotionEvent;
 import biggie.event.motion.StrafeEvent;
+import biggie.event.motion.UpdateEvent;
+import biggie.mixin.accessors.EntityPlayerAccessor;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.module.modules.misc.AntiBot;
 import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.ListSetting;
+import biggie.util.network.PacketUtil;
 import biggie.util.player.ChatUtil;
 import biggie.util.player.RotationUtil;
-import biggie.util.render.ServerRotation;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.entity.Entity;
@@ -21,12 +23,16 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
+import net.minecraft.network.play.client.C02PacketUseEntity;
+import net.minecraft.network.play.client.C07PacketPlayerDigging;
+import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MovingObjectPosition;
 import org.lwjgl.input.Keyboard;
 
 import java.util.ArrayList;
 
-// TODO: Adicionar e implementar o autoblock.
 public class KillAura extends Module {
 	private final DoubleSetting aps = new DoubleSetting("APS", 20, 1, 20, 0.5);
 	private final DoubleSetting attackRange = new DoubleSetting("Attack Range", 3, 3, 6, 0.05);
@@ -36,7 +42,7 @@ public class KillAura extends Module {
 
 	private final ListSetting rotationMode = new ListSetting("Rotation", "Silent", "Silent", "Lock");
 
-	private final ListSetting blockMode = new ListSetting("Block", "Pre", "None", "Pre", "Post");
+	private final ListSetting blockMode = new ListSetting("Block", "Pre", "None", "Interact");
 	private final DoubleSetting blockRange = new DoubleSetting("Block Range", 3, 3, 6, 0.05);
 
 	private final BooleanSetting teamsCheck = new BooleanSetting("Teams Check", true);
@@ -54,6 +60,9 @@ public class KillAura extends Module {
 	private float yaw = Float.NaN;
 	private float pitch = Float.NaN;
 
+	private boolean block = false;
+	public boolean blocking = false;
+
 	public KillAura() {
 		super("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
 	}
@@ -61,6 +70,19 @@ public class KillAura extends Module {
 	@Override
 	public void onDisable() {
 		clearTargetAndRotations(true);
+
+		block = false;
+
+		if (blocking) {
+			PacketUtil.sendPacketNoEvent(new C07PacketPlayerDigging(
+					C07PacketPlayerDigging.Action.RELEASE_USE_ITEM,
+					BlockPos.ORIGIN,
+					EnumFacing.DOWN
+			));
+			((EntityPlayerAccessor) mc.thePlayer).setItemInUseCount(0);
+
+			blocking = false;
+		}
 	}
 
 	@Override
@@ -85,14 +107,27 @@ public class KillAura extends Module {
 
 		final ItemStack currItem = mc.thePlayer.getHeldItem();
 
-		final boolean shouldBlock =
-				findTargets(((attackRange.value * 2) * (attackRange.value * 2)), blockRange.value * blockRange.value) &&
-				currItem != null &&
-				currItem.getItem() instanceof ItemSword;
 		final boolean shouldAttack = currTime - attackMs >= (1000.0f / aps.value);
 		final boolean shouldSwitch = currTime - switchMs > switchDelay.value && targetMode.value.equals("Switch");
 
-		// TODO: Lidar com o block.
+		block = findTargets(((attackRange.value * 2) * (attackRange.value * 2)), blockRange.value * blockRange.value) &&
+				currItem != null &&
+				currItem.getItem() instanceof ItemSword &&
+				!blockMode.value.equals("None");
+
+		if (!block) {
+			if (blocking) {
+				PacketUtil.sendPacketNoEvent(new C07PacketPlayerDigging(
+						C07PacketPlayerDigging.Action.RELEASE_USE_ITEM,
+						BlockPos.ORIGIN,
+						EnumFacing.DOWN
+				));
+
+				((EntityPlayerAccessor) mc.thePlayer).setItemInUseCount(0);
+
+				blocking = false;
+			}
+		}
 
 		if (targets.isEmpty()) {
 			clearTargetAndRotations(false);
@@ -104,7 +139,6 @@ public class KillAura extends Module {
 		if (success)
 			return;
 
-		// Caso a primeira tentativa é invalida tentamos todos os outros possiveis targets.
 		for (int i = 0; i < targets.size(); ++i) {
 			final EntityLivingBase en = targets.get(i);
 
@@ -160,6 +194,31 @@ public class KillAura extends Module {
 
 		event.moveForward = fixedMove[0];
 		event.moveStrafe = fixedMove[1];
+	}
+
+	@EventTarget
+	public void onUpdate(UpdateEvent event) {
+		if (event.getType() == EnumEventType.PRE) {
+			if (blockMode.value.equals("Interact")) {
+				if (block) {
+					if (target != null) {
+						PacketUtil.sendPacketNoEvent(new C02PacketUseEntity(
+								target,
+								C02PacketUseEntity.Action.INTERACT
+						));
+
+						PacketUtil.sendPacketNoEvent(new C08PacketPlayerBlockPlacement(
+								mc.thePlayer.getHeldItem()
+						));
+					}
+
+					((EntityPlayerAccessor) mc.thePlayer).setItemInUseCount(1);
+
+					blocking = true;
+					block = false;
+				}
+			}
+		}
 	}
 
 	@EventTarget
