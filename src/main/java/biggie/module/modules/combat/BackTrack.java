@@ -13,7 +13,6 @@ import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.IntegerSetting;
 import biggie.util.math.MathUtil;
 import biggie.util.network.PacketUtil;
-import biggie.util.player.ChatUtil;
 import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventPriority;
@@ -130,15 +129,6 @@ public class BackTrack extends Module {
 			if (currTime - data.receiveTime < delay.value)
 				continue;
 
-			if (data.packet instanceof S0CPacketSpawnPlayer) {
-				final S0CPacketSpawnPlayer S0C = (S0CPacketSpawnPlayer) data.packet;
-
-				if (mc.theWorld.getEntityByID(S0C.getEntityID()) == null) {
-					packets.remove(data);
-					continue;
-				}
-			}
-
 			if (data.packet instanceof S12PacketEntityVelocity) {
 				final S12PacketEntityVelocity S12 = (S12PacketEntityVelocity) data.packet;
 
@@ -207,8 +197,13 @@ public class BackTrack extends Module {
 		)
 			return;
 
-		if (event.packet instanceof S19PacketEntityStatus && ((S19PacketEntityStatus) event.packet).getEntity(mc.theWorld).getEntityId() == mc.thePlayer.getEntityId())
+		if (event.packet instanceof S19PacketEntityStatus) {
 			return;
+		}
+
+		if (event.packet instanceof S0CPacketSpawnPlayer || event.packet instanceof S0FPacketSpawnMob) {
+			return;
+		}
 
 		if (event.packet instanceof S08PacketPlayerPosLook) {
 			target = null;
