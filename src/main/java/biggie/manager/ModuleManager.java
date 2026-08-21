@@ -20,6 +20,7 @@ public class ModuleManager {
 		MODULES.addAll(Arrays.asList(
 				// combat modules
 				new AimAssist(),
+				new AutoSoup(),
 				new BackTrack(),
 				new KillAura(),
 				new LagRange(),
@@ -29,13 +30,13 @@ public class ModuleManager {
 				new Velocity(),
 
 				// misc modules
+				new AntiBot(),
 				new NoBlockHitDelay(),
 				new NoBreakSlow(),
 				new FastMine(),
-				new Scaffold(),
 				new FastPlace(),
-				new AntiBot(),
 				new InvMove(),
+				new Scaffold(),
 
 				// movement modules
 				new NoItemSlow(),
@@ -67,6 +68,8 @@ public class ModuleManager {
 				}
 			}
 		}
+
+		getModule(ArrayListModule.class).setEnabled(true);
 	}
 
 	public static ArrayList<Module> getModulesFromCategory(ModuleCategory moduleCategory) {

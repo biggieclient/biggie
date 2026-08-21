@@ -3,7 +3,6 @@ package biggie.module.modules.misc;
 import biggie.event.input.PlayerInputEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
-import biggie.util.player.ChatUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.client.gui.inventory.GuiInventory;
@@ -14,8 +13,8 @@ public class InvMove extends Module {
 		super("InvMove", ModuleCategory.MISC, Keyboard.KEY_NONE);
 	}
 
-	@EventTarget()
-	public void onTick(PlayerInputEvent event) {
+	@EventTarget
+	public void onPlayerInputEvent(PlayerInputEvent event) {
 		if (event.getType() == EnumEventType.POST) {
 			if (mc.theWorld != null && mc.thePlayer != null) {
 				if (mc.currentScreen instanceof GuiInventory) {

@@ -2,7 +2,6 @@ package biggie.module.modules.combat;
 
 import biggie.event.client.GameLoopEvent;
 import biggie.event.client.TickEvent;
-import biggie.event.render.RenderTickEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.setting.settings.BooleanSetting;
@@ -10,20 +9,16 @@ import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.ListSetting;
 import biggie.util.math.MathUtil;
 import biggie.util.player.RotationUtil;
-import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
-// TODO: Adicionar o modo Linear que só soma um passo fixo e o modo Adaptive
-//  que é literalmente o atual que fica mais lerdo ou mais rapido dependendo do gap da rotação.
 public class AimAssist extends Module {
-	private final ListSetting mode = new ListSetting("Mode", "Recursive", "Linear", "Exponential");
+	private final ListSetting mode = new ListSetting("Mode", "Exponential", "Linear", "Exponential");
 
 	private final BooleanSetting horizontal = new BooleanSetting(
 			"Horizontal",

@@ -7,6 +7,10 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.ThreadQuickExitException;
 
 public class PacketUtil extends AbstractUtil {
+	public static void sendPacket(Packet<?> packet) {
+		mc.getNetHandler().addToSendQueue(packet);
+	}
+
 	public static void sendPacketNoEvent(Packet<?> packet) {
 		((NetworkManagerAddon) mc.getNetHandler().getNetworkManager()).biggie$sendPacketNoEvent(packet);
 	}

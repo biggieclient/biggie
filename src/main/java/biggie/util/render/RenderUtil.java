@@ -1,6 +1,6 @@
 package biggie.util.render;
 
-import biggie.util.player.RotationUtil;
+import biggie.util.AbstractUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
@@ -13,7 +13,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
 
-public class RenderUtil {
+public class RenderUtil extends AbstractUtil {
 	public static double interpPos(final double destPos, final double lastTickPos, final float progress) {
 		return lastTickPos + (destPos - lastTickPos) * progress;
 	}
@@ -50,7 +50,7 @@ public class RenderUtil {
 			double lastX2, double lastY2, double lastZ2,
 			int r, int g, int b, int a, float progress
 	) {
-		final RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
+		final RenderManager renderManager = mc.getRenderManager();
 		final Tessellator tess = Tessellator.getInstance();
 		final WorldRenderer worldRenderer = tess.getWorldRenderer();
 
@@ -197,7 +197,7 @@ public class RenderUtil {
 			final int r, final int g, final int b, final float progress
 	)
 	{
-		final RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
+		final RenderManager renderManager = mc.getRenderManager();
 		final Tessellator tess = Tessellator.getInstance();
 		final WorldRenderer worldRenderer = tess.getWorldRenderer();
 
@@ -295,7 +295,7 @@ public class RenderUtil {
 			final Vec3 lastPos, final Vec3 pos, final double width, final double height,
 			final int r, final int g, final int b, final int a, final float progress
 	) {
-		final RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
+		final RenderManager renderManager = mc.getRenderManager();
 		final Tessellator tess = Tessellator.getInstance();
 		final WorldRenderer worldRenderer = tess.getWorldRenderer();
 
@@ -351,10 +351,10 @@ public class RenderUtil {
 			final Vec3 lastPos, final Vec3 pos, final String text,
 			final int r, final int g, final int b, final int a, final float scale, final float progress
 	) {
-		final double width = Minecraft.getMinecraft().fontRendererObj.getStringWidth(text);
-		final double height = Minecraft.getMinecraft().fontRendererObj.FONT_HEIGHT;
+		final double width = mc.fontRendererObj.getStringWidth(text);
+		final double height = mc.fontRendererObj.FONT_HEIGHT;
 
-		final RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
+		final RenderManager renderManager = mc.getRenderManager();
 
 		final double interpX = interpPos(pos.xCoord, lastPos.xCoord, progress);
 		final double interpY = interpPos(pos.yCoord, lastPos.yCoord, progress);
@@ -379,7 +379,7 @@ public class RenderUtil {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_CULL_FACE);
 
-		Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(text, (float) (-width * 0.5), (float) -height, new Color(r, g, b, a).getRGB());
+		mc.fontRendererObj.drawStringWithShadow(text, (float) (-width * 0.5), (float) -height, new Color(r, g, b, a).getRGB());
 
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
