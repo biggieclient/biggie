@@ -1,4 +1,4 @@
-package biggie.module.modules.misc;
+package biggie.module.modules.player;
 
 import biggie.event.client.TickEvent;
 import biggie.mixin.accessors.MinecraftAccessor;
@@ -19,7 +19,7 @@ public class FastPlace extends Module {
 	);
 
     public FastPlace() {
-        super("FastPlace", ModuleCategory.MISC, Keyboard.KEY_NONE);
+        super("FastPlace", ModuleCategory.PLAYER, Keyboard.KEY_NONE);
     }
 
     @Override

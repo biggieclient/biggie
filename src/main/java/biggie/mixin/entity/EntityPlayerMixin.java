@@ -2,8 +2,7 @@ package biggie.mixin.entity;
 
 import biggie.manager.ModuleManager;
 import biggie.module.modules.combat.KillAura;
-import biggie.module.modules.misc.NoBreakSlow;
-import biggie.util.player.ChatUtil;
+import biggie.module.modules.player.NoBreakSlow;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.entity.EntityPlayerSP;

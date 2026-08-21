@@ -1,4 +1,4 @@
-package biggie.module.modules.misc;
+package biggie.module.modules.player;
 
 import biggie.event.input.PlayerInputEvent;
 import biggie.event.motion.*;
@@ -53,7 +53,7 @@ public class Scaffold extends Module {
             EnumFacing.DOWN
     };
 
-    public Scaffold() { super("Scaffold", ModuleCategory.MISC, Keyboard.KEY_NONE); }
+    public Scaffold() { super("Scaffold", ModuleCategory.PLAYER, Keyboard.KEY_NONE); }
 
     @Override
     public void onEnable() {

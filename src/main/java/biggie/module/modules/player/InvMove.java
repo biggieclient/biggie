@@ -1,4 +1,4 @@
-package biggie.module.modules.misc;
+package biggie.module.modules.player;
 
 import biggie.event.input.PlayerInputEvent;
 import biggie.module.Module;
@@ -10,7 +10,7 @@ import org.lwjgl.input.Keyboard;
 
 public class InvMove extends Module {
 	public InvMove() {
-		super("InvMove", ModuleCategory.MISC, Keyboard.KEY_NONE);
+		super("InvMove", ModuleCategory.PLAYER, Keyboard.KEY_NONE);
 	}
 
 	@EventTarget

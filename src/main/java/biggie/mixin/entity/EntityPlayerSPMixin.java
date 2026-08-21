@@ -6,7 +6,7 @@ import biggie.event.motion.LivingUpdateEvent;
 import biggie.event.motion.MotionEvent;
 import biggie.event.motion.UpdateEvent;
 import biggie.manager.ModuleManager;
-import biggie.module.modules.misc.Scaffold;
+import biggie.module.modules.player.Scaffold;
 import biggie.util.render.ServerRotation;
 import com.mojang.authlib.GameProfile;
 import net.lenni0451.asmevents.EventManager;

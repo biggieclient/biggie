@@ -5,6 +5,7 @@ import biggie.module.ModuleCategory;
 import biggie.module.modules.combat.*;
 import biggie.module.modules.misc.*;
 import biggie.module.modules.movement.*;
+import biggie.module.modules.player.*;
 import biggie.module.modules.render.*;
 import biggie.setting.Setting;
 
@@ -31,17 +32,19 @@ public class ModuleManager {
 
 				// misc modules
 				new AntiBot(),
-				new NoBlockHitDelay(),
-				new NoBreakSlow(),
-				new FastMine(),
-				new FastPlace(),
-				new InvMove(),
-				new Scaffold(),
 
 				// movement modules
 				new NoItemSlow(),
 				new Sprint(),
 				new Speed(),
+
+				// player modules
+				new FastMine(),
+				new FastPlace(),
+				new InvMove(),
+				new NoBlockHitDelay(),
+				new NoBreakSlow(),
+				new Scaffold(),
 
 				// render modules
 				new ClickGuiModule(),

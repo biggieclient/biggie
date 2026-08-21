@@ -2,8 +2,8 @@ package biggie.mixin.client;
 
 import biggie.event.client.AttackEvent;
 import biggie.manager.ModuleManager;
-import biggie.module.modules.misc.FastMine;
-import biggie.module.modules.misc.NoBlockHitDelay;
+import biggie.module.modules.player.FastMine;
+import biggie.module.modules.player.NoBlockHitDelay;
 import net.lenni0451.asmevents.EventManager;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.block.Block;
@@ -58,9 +58,9 @@ public class PlayerControllerMPMixin {
 		if (fastMine.isEnabled()) {
 			switch (fastMine.mode.value) {
 				case "Normal":
-					return fastMine.speed.value.floatValue() / 6.0F;
+					hardness *= fastMine.speed.value.floatValue();
 				case "Increment":
-					hardness += fastMine.speed.value.floatValue() / 12.0F;
+					hardness += fastMine.incrementValue.value.floatValue() / 10.0F;
 
 					break;
 			}
