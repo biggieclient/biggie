@@ -35,6 +35,7 @@ public class ModuleManager {
 				new Scaffold(),
 				new FastPlace(),
 				new AntiBot(),
+				new InvMove(),
 
 				// movement modules
 				new NoItemSlow(),

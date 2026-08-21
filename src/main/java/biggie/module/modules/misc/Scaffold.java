@@ -1,6 +1,6 @@
 package biggie.module.modules.misc;
 
-import biggie.event.input.PostPlayerInputEvent;
+import biggie.event.input.PlayerInputEvent;
 import biggie.event.motion.*;
 import biggie.event.render.RenderTickEvent;
 import biggie.module.Module;
@@ -188,20 +188,22 @@ public class Scaffold extends Module {
     }
 
     @EventTarget
-    public void onPostPlayerInput(PostPlayerInputEvent event) {
-        if (Float.isNaN(yaw) || !moveFix.value)
-            return;
+    public void onPlayerInput(PlayerInputEvent event) {
+		if (event.getType() == EnumEventType.POST) {
+			if (Float.isNaN(yaw) || !moveFix.value)
+				return;
 
-        final float[] fixedMove = RotationUtil.getFixedMove(
-                mc.thePlayer,
-                mc.thePlayer.rotationYaw,
-                yaw,
-                mc.thePlayer.movementInput.moveForward,
-                mc.thePlayer.movementInput.moveStrafe
-        );
+			final float[] fixedMove = RotationUtil.getFixedMove(
+					mc.thePlayer,
+					mc.thePlayer.rotationYaw,
+					yaw,
+					mc.thePlayer.movementInput.moveForward,
+					mc.thePlayer.movementInput.moveStrafe
+			);
 
-        event.moveForward = fixedMove[0];
-        event.moveStrafe = fixedMove[1];
+			event.forward = fixedMove[0];
+			event.strafe = fixedMove[1];
+		}
     }
 
     @EventTarget

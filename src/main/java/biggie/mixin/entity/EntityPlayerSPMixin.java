@@ -1,6 +1,6 @@
 package biggie.mixin.entity;
 
-import biggie.event.input.PostPlayerInputEvent;
+import biggie.event.input.PlayerInputEvent;
 import biggie.event.motion.ItemSlowDownEvent;
 import biggie.event.motion.LivingUpdateEvent;
 import biggie.event.motion.MotionEvent;
@@ -266,16 +266,26 @@ public abstract class EntityPlayerSPMixin extends AbstractClientPlayer {
 		float walkVelocity = 0.8F;
 		boolean isWalking = this.movementInput.moveForward >= walkVelocity;
 
+		final PlayerInputEvent preInputEvent = new PlayerInputEvent(
+				EnumEventType.PRE,
+				this.movementInput.moveForward,
+				this.movementInput.moveStrafe
+		);
+
+		EventManager.call(preInputEvent);
+
 		this.movementInput.updatePlayerMoveState();
 
-		final PostPlayerInputEvent postInputEvent = new PostPlayerInputEvent(
-				this.movementInput.moveForward, this.movementInput.moveStrafe
+		final PlayerInputEvent postInputEvent = new PlayerInputEvent(
+				EnumEventType.POST,
+				this.movementInput.moveForward,
+				this.movementInput.moveStrafe
 		);
 
 		EventManager.call(postInputEvent);
 
-		this.movementInput.moveForward = postInputEvent.moveForward;
-		this.movementInput.moveStrafe = postInputEvent.moveStrafe;
+		this.movementInput.moveForward = postInputEvent.forward;
+		this.movementInput.moveStrafe = postInputEvent.strafe;
 
 		ItemSlowDownEvent itemSlowDownEvent = new ItemSlowDownEvent(
 				0.2F,

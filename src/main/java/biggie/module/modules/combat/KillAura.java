@@ -1,7 +1,7 @@
 package biggie.module.modules.combat;
 
 import biggie.event.client.TickEvent;
-import biggie.event.input.PostPlayerInputEvent;
+import biggie.event.input.PlayerInputEvent;
 import biggie.event.motion.JumpEvent;
 import biggie.event.motion.MotionEvent;
 import biggie.event.motion.StrafeEvent;
@@ -14,7 +14,6 @@ import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.ListSetting;
 import biggie.util.network.PacketUtil;
-import biggie.util.player.ChatUtil;
 import biggie.util.player.RotationUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
@@ -154,20 +153,22 @@ public class KillAura extends Module {
 	}
 
 	@EventTarget
-	public void onPostPlayerInput(PostPlayerInputEvent event) {
-		if (Float.isNaN(yaw) || !moveFix.value)
-			return;
+	public void onPlayerInput(PlayerInputEvent event) {
+		if (event.getType() == EnumEventType.POST) {
+			if (Float.isNaN(yaw) || !moveFix.value)
+				return;
 
-		final float[] fixedMove = RotationUtil.getFixedMove(
-				mc.thePlayer,
-				mc.thePlayer.rotationYaw,
-				yaw,
-				mc.thePlayer.movementInput.moveForward,
-				mc.thePlayer.movementInput.moveStrafe
-		);
+			final float[] fixedMove = RotationUtil.getFixedMove(
+					mc.thePlayer,
+					mc.thePlayer.rotationYaw,
+					yaw,
+					mc.thePlayer.movementInput.moveForward,
+					mc.thePlayer.movementInput.moveStrafe
+			);
 
-		event.moveForward = fixedMove[0];
-		event.moveStrafe = fixedMove[1];
+			event.forward = fixedMove[0];
+			event.strafe = fixedMove[1];
+		}
 	}
 
 	@EventTarget
