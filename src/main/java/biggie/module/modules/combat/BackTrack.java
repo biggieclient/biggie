@@ -118,7 +118,7 @@ public class BackTrack extends Module {
 		if (target == null)
 			return;
 
-        for (final PacketData data : packets) {
+		for (final PacketData data : packets) {
 			if (currTime - data.receiveTime < delay.value)
 				continue;
 
@@ -131,7 +131,7 @@ public class BackTrack extends Module {
 
 			PacketUtil.receivePacket(data.packet);
 			packets.remove(data);
-        }
+		}
 	}
 
 	@EventTarget(noParamEvents = Render3DEvent.class)
@@ -175,10 +175,10 @@ public class BackTrack extends Module {
 
 		if (
 				(event.packet instanceof S00PacketKeepAlive && !cancelKeepAlive.value) ||
-				event.packet instanceof S02PacketChat                                  ||
-				event.packet instanceof S29PacketSoundEffect                           ||
-				(event.packet instanceof S01PacketPong && !cancelPong.value)           ||
-				event.packet instanceof S06PacketUpdateHealth
+						event.packet instanceof S02PacketChat                                  ||
+						event.packet instanceof S29PacketSoundEffect                           ||
+						(event.packet instanceof S01PacketPong && !cancelPong.value)           ||
+						event.packet instanceof S06PacketUpdateHealth
 		)
 			return;
 
