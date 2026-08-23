@@ -257,7 +257,7 @@ public class KillAura extends Module {
 			if (rayTrace == null || rayTrace.typeOfHit != MovingObjectPosition.MovingObjectType.ENTITY || rayTrace.entityHit != target)
 				return false;
 
-			if (mc.thePlayer.getPositionEyes(1.0f).distanceTo(rayTrace.hitVec) >= attackRange.value)
+			if (mc.thePlayer.getPositionEyes(1.0f).distanceTo(rayTrace.hitVec) > attackRange.value)
 				return false;
 		}
 
@@ -341,12 +341,12 @@ public class KillAura extends Module {
 			if (AntiBot.botList.contains(enLivingBase))
 				continue;
 
-			final double module = en.getDistanceSq(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ);
+			final double sqModule = en.getDistanceSq(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ);
 
-			if (module <= sqBlockRange)
+			if (sqModule <= sqBlockRange)
 				shouldBlock = true;
 
-			if (module > sqAttackRange)
+			if (sqModule > sqAttackRange)
 				continue;
 
 			targets.add(enLivingBase);

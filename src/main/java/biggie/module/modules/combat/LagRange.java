@@ -103,12 +103,37 @@ public class LagRange extends Module {
 		if (mc.thePlayer == null || mc.theWorld == null || mc.getNetHandler() == null)
 			return;
 
+		if (!packets.isEmpty()) {
+			final long currTime = System.currentTimeMillis();
+
+			packets.removeIf(packetData -> {
+				if (currTime - packetData.receiveTime < delay.value)
+					return false;
+
+				if (packetData.packet instanceof C03PacketPlayer) {
+					final C03PacketPlayer C03 = (C03PacketPlayer) packetData.packet;
+
+					if (C03.isMoving()) {
+						lastPos = serverPos != null ? serverPos : new Vec3(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ);
+						serverPos = new Vec3(C03.getPositionX(), C03.getPositionY(), C03.getPositionZ());
+						posTime = currTime;
+					}
+				}
+
+				PacketUtil.sendPacketNoEvent(packetData.packet);
+				return true;
+			});
+		}
+
 		shouldLag = false;
 
 		if (!MovementUtil.isMoving()) {
 			flushPackets();
 			return;
 		}
+
+		final double sqMinRange = minRange.value * minRange.value;
+		final double sqMaxRange = maxRange.value * maxRange.value;
 
 		for (final Entity en : mc.theWorld.loadedEntityList) {
 			if (!(en instanceof EntityPlayer))
@@ -123,12 +148,12 @@ public class LagRange extends Module {
 			if (AntiBot.botList.contains(en))
 				continue;
 
-			if (mc.thePlayer.getDistanceSqToEntity(en) < minRange.value * minRange.value) {
+			if (mc.thePlayer.getDistanceSqToEntity(en) < sqMinRange) {
 				shouldLag = false;
 				break;
 			}
 
-			if (mc.thePlayer.getDistanceSqToEntity(en) > maxRange.value * maxRange.value)
+			if (mc.thePlayer.getDistanceSqToEntity(en) > sqMaxRange)
 				continue;
 
 			shouldLag = true;
@@ -136,41 +161,6 @@ public class LagRange extends Module {
 
 		if (!shouldLag)
 			flushPackets();
-	}
-
-	@EventTarget(priority = EnumEventPriority.HIGHEST)
-	public void onTick_(TickEvent event) {
-		if (event.getType() != EnumEventType.PRE)
-			return;
-
-		if (packets.isEmpty())
-			return;
-
-		final long currTime = System.currentTimeMillis();
-
-		for (final PacketData packetData : packets) {
-			if (currTime - packetData.receiveTime < delay.value)
-				continue;
-
-			if (packetData.packet instanceof C03PacketPlayer.C04PacketPlayerPosition) {
-				final C03PacketPlayer.C04PacketPlayerPosition C04 = (C03PacketPlayer.C04PacketPlayerPosition) packetData.packet;
-
-				lastPos = serverPos;
-				posTime = currTime;
-				serverPos = new Vec3(C04.getPositionX(), C04.getPositionY(), C04.getPositionZ());
-			}
-
-			if (packetData.packet instanceof C03PacketPlayer.C06PacketPlayerPosLook) {
-				final C03PacketPlayer.C06PacketPlayerPosLook C04 = (C03PacketPlayer.C06PacketPlayerPosLook) packetData.packet;
-
-				lastPos = serverPos;
-				posTime = currTime;
-				serverPos = new Vec3(C04.getPositionX(), C04.getPositionY(), C04.getPositionZ());
-			}
-
-			PacketUtil.sendPacketNoEvent(packetData.packet);
-			packets.remove(packetData);
-		}
 	}
 
 	@EventTarget(noParamEvents = Render3DEvent.class)

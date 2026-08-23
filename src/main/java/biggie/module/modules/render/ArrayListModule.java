@@ -123,8 +123,8 @@ public class ArrayListModule extends Module {
 			final boolean outline = bars.value.equals("Outline");
 			final boolean basicBar = bars.value.equals("Side") || outline;
 
-			final int backgroundLeftX = leftX - (!alignRight.value && basicBar ? 1 : (outline ? 1 : 0));
-			final int backgroundRightX = leftX + textWidth + (alignRight.value && basicBar ? 1 : (outline ? 1 : 0));
+			final int backgroundLeftX = leftX - 1;
+			final int backgroundRightX = leftX + textWidth + 1;
 
 			final int barLeftX = alignRight.value ? backgroundRightX : backgroundLeftX - 1;
 			final int barRightX = barLeftX + 1;
