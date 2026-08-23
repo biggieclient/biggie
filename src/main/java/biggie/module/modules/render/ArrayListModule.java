@@ -79,7 +79,20 @@ public class ArrayListModule extends Module {
 		final ArrayList<Module> enabledModules = (ArrayList<Module>) ModuleManager.MODULES
 				.parallelStream()
 				.filter(Module::isEnabled)
-				.sorted((e1, e2) -> mc.fontRendererObj.getStringWidth(e2.name + (e2.getInfo().isEmpty() ? "" : "§7 " + e2.getInfo())) - mc.fontRendererObj.getStringWidth(e1.name + (e1.getInfo().isEmpty() ? "" : "§7 " + e1.getInfo())))
+				.sorted((e1, e2) -> {
+					final String e2Text;
+					final String e1Text;
+
+					if (lowerCase.value) {
+						e2Text = e2.name + (e2.getInfo().isEmpty() ? "" : "§7 " + e2.getInfo());
+						e1Text = e1.name + (e1.getInfo().isEmpty() ? "" : "§7 " + e1.getInfo());
+					} else {
+						e2Text = e2.name + (e2.getInfo().isEmpty() ? "" : "§7 " + e2.getInfo()).toLowerCase();
+						e1Text = e1.name + (e1.getInfo().isEmpty() ? "" : "§7 " + e1.getInfo()).toLowerCase();
+					}
+
+					return mc.fontRendererObj.getStringWidth(e2Text) - mc.fontRendererObj.getStringWidth(e1Text);
+				})
 				.collect(Collectors.toList());
 
 		int modOffsetY = offsetY.value;
