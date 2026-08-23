@@ -8,6 +8,7 @@ import biggie.module.ModuleCategory;
 import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.ListSetting;
 import biggie.util.math.MathUtil;
+import biggie.util.player.MovementUtil;
 import biggie.util.player.RotationUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
@@ -94,7 +95,7 @@ public class Scaffold extends Module {
         } else if (mc.thePlayer.onGround && sprintMode.value.equals("Keep-Y")) {
             keepY = Math.floor(mc.thePlayer.posY) - 1;
 
-            if (mc.thePlayer.movementInput.moveForward != 0 || mc.thePlayer.movementInput.moveStrafe != 0) {
+            if (MovementUtil.isMoving()) {
                 clearRotation();
                 keepRot = true;
             }

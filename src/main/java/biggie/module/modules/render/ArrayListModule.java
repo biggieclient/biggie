@@ -80,15 +80,15 @@ public class ArrayListModule extends Module {
 				.parallelStream()
 				.filter(Module::isEnabled)
 				.sorted((e1, e2) -> {
-					final String e2Text;
-					final String e1Text;
+					String e2Text;
+					String e1Text;
+
+					e2Text = e2.name + (e2.getInfo().isEmpty() ? "" : "§7 " + e2.getInfo());
+					e1Text = e1.name + (e1.getInfo().isEmpty() ? "" : "§7 " + e1.getInfo());
 
 					if (lowerCase.value) {
-						e2Text = e2.name + (e2.getInfo().isEmpty() ? "" : "§7 " + e2.getInfo()).toLowerCase();
-						e1Text = e1.name + (e1.getInfo().isEmpty() ? "" : "§7 " + e1.getInfo()).toLowerCase();
-					} else {
-						e2Text = e2.name + (e2.getInfo().isEmpty() ? "" : "§7 " + e2.getInfo());
-						e1Text = e1.name + (e1.getInfo().isEmpty() ? "" : "§7 " + e1.getInfo());
+						e1Text = e1Text.toLowerCase();
+						e2Text = e2Text.toLowerCase();
 					}
 
 					return mc.fontRendererObj.getStringWidth(e2Text) - mc.fontRendererObj.getStringWidth(e1Text);
