@@ -58,14 +58,18 @@ public class AntiBot extends Module {
 
             final UUID playerUUID = enPlayer.getUniqueID();
 
-            if (playerUUID != null && mc.getNetHandler().getPlayerInfo(playerUUID) != null)
+            if (playerUUID == null || mc.getNetHandler().getPlayerInfo(playerUUID) == null) {
+                addBot(enPlayer, currTime);
                 continue;
+            }
 
-            if (enPlayer.getHealth() > 0.0f && enPlayer.getMaxHealth() > 0.0f)
-                continue;
-
-            botList.add(enPlayer);
-            lastCheckMs = currTime;
+            if (enPlayer.getHealth() <= 0.0f && enPlayer.getMaxHealth() <= 0.0f)
+                addBot(enPlayer, currTime);
         }
+    }
+
+    void addBot(final EntityPlayer enPlayer, final long currTime) {
+        botList.add(enPlayer);
+        lastCheckMs = currTime;
     }
 }
