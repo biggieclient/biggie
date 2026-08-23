@@ -84,11 +84,11 @@ public class ArrayListModule extends Module {
 					final String e1Text;
 
 					if (lowerCase.value) {
-						e2Text = e2.name + (e2.getInfo().isEmpty() ? "" : "§7 " + e2.getInfo());
-						e1Text = e1.name + (e1.getInfo().isEmpty() ? "" : "§7 " + e1.getInfo());
-					} else {
 						e2Text = e2.name + (e2.getInfo().isEmpty() ? "" : "§7 " + e2.getInfo()).toLowerCase();
 						e1Text = e1.name + (e1.getInfo().isEmpty() ? "" : "§7 " + e1.getInfo()).toLowerCase();
+					} else {
+						e2Text = e2.name + (e2.getInfo().isEmpty() ? "" : "§7 " + e2.getInfo());
+						e1Text = e1.name + (e1.getInfo().isEmpty() ? "" : "§7 " + e1.getInfo());
 					}
 
 					return mc.fontRendererObj.getStringWidth(e2Text) - mc.fontRendererObj.getStringWidth(e1Text);
