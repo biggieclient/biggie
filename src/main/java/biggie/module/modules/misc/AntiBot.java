@@ -61,6 +61,9 @@ public class AntiBot extends Module {
             if (playerUUID != null && mc.getNetHandler().getPlayerInfo(playerUUID) != null)
                 continue;
 
+            if (enPlayer.getHealth() > 0.0f && enPlayer.getMaxHealth() > 0.0f)
+                continue;
+
             botList.add(enPlayer);
             lastCheckMs = currTime;
         }

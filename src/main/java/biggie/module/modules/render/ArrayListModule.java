@@ -10,39 +10,62 @@ import biggie.setting.settings.ListSetting;
 import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.ScaledResolution;
 import org.lwjgl.input.Keyboard;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-// TODO: Deixar ajustavel a posição com drag e adicionar outros modo de cor,
-//  de preferencia colocar logo setting de cor invés de usar 2 rgb que ocupa muito espaço.
+// TODO: Deixar ajustavel a posição com drag.
 public class ArrayListModule extends Module {
-	public final IntegerSetting posX = new IntegerSetting(
-			"Pos X",
+	private final BooleanSetting alignRight = new BooleanSetting(
+			"Align Right",
+			true
+	);
+
+	private final IntegerSetting offsetX = new IntegerSetting(
+			"Offset X",
 			0,
 			0,
 			500,
 			1
 	);
-	public final IntegerSetting posY = new IntegerSetting(
-			"Pos Y",
+	private final IntegerSetting offsetY = new IntegerSetting(
+			"Offset Y",
 			5,
 			0,
 			500,
 			1
 	);
 
-	public final BooleanSetting background = new BooleanSetting("Background", true);
-
-	public final ListSetting bars = new ListSetting(
-			"Bars",
-			"Left",
-            "None", "Left", "Outline"
+	private final BooleanSetting background = new BooleanSetting(
+			"Background",
+			true
 	);
 
-	private final float invTicks = 1.0f / 100.0f;
+	private final BooleanSetting lowerCase = new BooleanSetting(
+			"Lower Case",
+			true
+	);
+
+	private final ListSetting bars = new ListSetting(
+			"Bars",
+			"Side",
+            "None",
+			"Side",
+			"Outline"
+	);
+
+	public static final ListSetting COLOR = new ListSetting(
+			"Color",
+			"Blue",
+			"Red",
+			"Blue",
+			"Aqua"
+	);
+
+	public static final float INV_TICKS = 1.0f / 100.0f;
 
 	public ArrayListModule() {
 		super("ArrayList", ModuleCategory.RENDER, Keyboard.KEY_NONE);
@@ -58,99 +81,157 @@ public class ArrayListModule extends Module {
 				.filter(Module::isEnabled)
 				.sorted((e1, e2) -> mc.fontRendererObj.getStringWidth(e2.name + e2.getInfo()) - mc.fontRendererObj.getStringWidth(e1.name + e1.getInfo()))
 				.collect(Collectors.toList());
-		int offsetY = posY.value;
 
-		final float progress = mc.thePlayer.ticksExisted * invTicks;
+		int modOffsetY = offsetY.value;
+
+		final float progress = mc.thePlayer.ticksExisted * INV_TICKS;
+
 		final int size = enabledModules.size();
+
+		final Color[] colors = getColors(COLOR.value);
+		final ScaledResolution scaledRes = new ScaledResolution(mc);
 
 		for (int i = 0; i < size; ++i) {
 			final Module module = enabledModules.get(i);
-			final String text = module.name + (module.getInfo().isEmpty() ? "" : "§7 " + module.getInfo());
+			String text = module.name + (module.getInfo().isEmpty() ? "" : "§7 " + module.getInfo());
 
-			final Color color = RenderUtil.getRGBColor(progress + (i * 2.0f * invTicks));
+			if (lowerCase.value)
+				text = text.toLowerCase();
+
+			float modProgress = (progress + (10 * INV_TICKS * i));
+			modProgress -= (int) modProgress;
+
+			final Color color = RenderUtil.getInterpolatedColor(colors[0], colors[1], colors[0], modProgress);
+
+			final int textWidth = mc.fontRendererObj.getStringWidth(text);
+
+			final int leftX = alignRight.value ? scaledRes.getScaledWidth() - textWidth - offsetX.value : offsetX.value;
+
+			final boolean outline = bars.value.equals("Outline");
+			final boolean basicBar = bars.value.equals("Side") || outline;
+
+			final int backgroundLeftX = leftX - (!alignRight.value && basicBar ? 1 : (outline ? 1 : 0));
+			final int backgroundRightX = leftX + textWidth + (alignRight.value && basicBar ? 1 : (outline ? 1 : 0));
+
+			final int barLeftX = alignRight.value ? backgroundRightX : backgroundLeftX - 1;
+			final int barRightX = barLeftX + 1;
+
+			final int topBarLeftX = backgroundLeftX - 1;
+			final int topBarRightX = backgroundRightX + 1;
+
+			final int otherBarLeftX = alignRight.value ? backgroundLeftX - 1 : backgroundRightX;
+			final int otherBarRightX = otherBarLeftX + 1;
+
+			final boolean expandTop = bars.value.equals("Outline") && i == 0;
+
+			final int backgroundTop = modOffsetY - (expandTop ? 1 : 0);
+			final int backgroundBottom = modOffsetY + mc.fontRendererObj.FONT_HEIGHT + 1;
 
 			if (background.value) {
-				final int rectWidth = mc.fontRendererObj.getStringWidth(text) + 1;
-
 				Gui.drawRect(
-						posX.value,
-						offsetY - ((i == 0) ? 1 : 0),
-						posX.value + rectWidth,
-						offsetY + mc.fontRendererObj.FONT_HEIGHT + 1,
-						new Color(0, 0, 0, 100).getRGB()
+						backgroundLeftX,
+						backgroundTop,
+						backgroundRightX,
+						backgroundBottom,
+						new Color(0, 0, 0, 125).getRGB()
 				);
 			}
 
-			if (bars.value.equals("Left")) {
+			if (basicBar) {
 				Gui.drawRect(
-						posX.value - 1,
-						offsetY - (background.value ? 1 : 0),
-						posX.value,
-						offsetY + mc.fontRendererObj.FONT_HEIGHT + 1,
+						barLeftX,
+						backgroundTop,
+						barRightX,
+						backgroundBottom,
 						color.getRGB()
 				);
-			} else if (bars.value.equals("Outline")) {
-				final int rectWidth = mc.fontRendererObj.getStringWidth(text) + 1;
-				final Module nextModule = (i == size - 1) ? null : enabledModules.get(i + 1);
+			}
 
-				Gui.drawRect(
-						posX.value - 1,
-						offsetY,
-						posX.value,
-						offsetY + mc.fontRendererObj.FONT_HEIGHT + 1,
-						color.getRGB()
-				);
-
-				if (i == 0) {
+			if (bars.value.equals("Outline")) {
+				if (expandTop) {
 					Gui.drawRect(
-							posX.value - 1,
-							offsetY - 1,
-							posX.value + rectWidth + 1,
-							offsetY,
+							topBarLeftX,
+							backgroundTop - 1,
+							topBarRightX,
+							backgroundTop,
+							color.getRGB()
+					);
+				}
+
+				if (i + 1 == enabledModules.size()) {
+					Gui.drawRect(
+							topBarLeftX,
+							backgroundBottom,
+							topBarRightX,
+							backgroundBottom + 1,
+							color.getRGB()
+					);
+				} else {
+					final Module nextModule = enabledModules.get(i + 1);
+					String nextText = nextModule.name + (nextModule.getInfo().isEmpty() ? "" : "§7 " + nextModule.getInfo());
+
+					if (lowerCase.value)
+						nextText = nextText.toLowerCase();
+
+					final int nextTextWidth = mc.fontRendererObj.getStringWidth(nextText);
+
+					final int nextLeftX = alignRight.value ? scaledRes.getScaledWidth() - nextTextWidth - offsetX.value : offsetX.value;
+
+					final int nextBackLeftX = nextLeftX - (!alignRight.value && basicBar ? 1 : (outline ? 1 : 0));
+					final int nextBackRightX = nextLeftX + nextTextWidth + 1;
+
+					final int bottomBarLeftX = alignRight.value ? backgroundLeftX - 1 : nextBackRightX;
+					final int bottomBarRightX = alignRight.value ? nextBackLeftX - 1 : backgroundRightX + 1;
+
+					Gui.drawRect(
+							bottomBarLeftX,
+							backgroundBottom,
+							bottomBarRightX,
+							backgroundBottom + 1,
 							color.getRGB()
 					);
 				}
 
 				Gui.drawRect(
-						posX.value + rectWidth,
-						offsetY,
-						posX.value + rectWidth + 1,
-						offsetY + mc.fontRendererObj.FONT_HEIGHT + 1,
+						otherBarLeftX,
+						backgroundTop,
+						otherBarRightX,
+						backgroundBottom,
 						color.getRGB()
 				);
-
-				if (i == size - 1) {
-					Gui.drawRect(
-							posX.value - 1,
-							offsetY + mc.fontRendererObj.FONT_HEIGHT + 1,
-							posX.value + rectWidth + 1,
-							offsetY + mc.fontRendererObj.FONT_HEIGHT + 2,
-							color.getRGB()
-					);
-				}
-
-				if (nextModule != null) {
-					final String nextText = nextModule.name + (nextModule.getInfo().isEmpty() ? "" : "§7 " + nextModule.getInfo());
-					final int nextRectWidth = mc.fontRendererObj.getStringWidth(nextText) + 1;
-
-					Gui.drawRect(
-							posX.value + nextRectWidth + 1,
-							offsetY + mc.fontRendererObj.FONT_HEIGHT + 1,
-							posX.value + rectWidth + 1,
-							offsetY + mc.fontRendererObj.FONT_HEIGHT + 2,
-							color.getRGB()
-					);
-				}
 			}
 
 			mc.fontRendererObj.drawStringWithShadow(
 					text,
-					posX.value + 1,
-					offsetY,
+					leftX,
+					modOffsetY,
 					color.getRGB()
 			);
 
-			offsetY += mc.fontRendererObj.FONT_HEIGHT + 1;
+			modOffsetY += mc.fontRendererObj.FONT_HEIGHT + 1;
 		}
+	}
+
+	public static Color[] getColors(final String color) {
+		final Color[] colors = new Color[] { Color.WHITE, Color.WHITE };
+
+		switch (color) {
+			case "Red":
+				colors[0] = new Color(211, 80, 112);
+				colors[1] = new Color(220, 172, 192);
+				break;
+
+			case "Blue":
+				colors[0] = new Color(95, 128, 211);
+				colors[1] = new Color(161, 204, 241);
+				break;
+
+			case "Aqua":
+				colors[0] = new Color(45, 144, 214);
+				colors[1] = new Color(116, 173, 198);
+				break;
+		}
+
+		return colors;
 	}
 }

@@ -8,10 +8,13 @@ import biggie.event.render.Render3DEvent;
 import biggie.event.render.RenderTickEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
+import biggie.module.modules.misc.AntiBot;
+import biggie.module.modules.render.ArrayListModule;
 import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.IntegerSetting;
 import biggie.util.network.PacketUtil;
+import biggie.util.player.MovementUtil;
 import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventPriority;
@@ -19,6 +22,7 @@ import net.lenni0451.asmevents.event.enums.EnumEventType;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.client.C02PacketUseEntity;
 import net.minecraft.network.play.client.C03PacketPlayer;
@@ -27,6 +31,7 @@ import net.minecraft.util.Vec3;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class LagRange extends Module {
@@ -54,17 +59,8 @@ public class LagRange extends Module {
 
 	private final BooleanSetting lineBox = new BooleanSetting("Line Box", true);
 	private final BooleanSetting filledBox = new BooleanSetting("Filled Box", false);
-	private final BooleanSetting rotate = new BooleanSetting("Rotate", true);
 
 	private final DoubleSetting fillOpacity = new DoubleSetting("Fill Opacity", 45, 20, 100, 5);
-
-	private final DoubleSetting lR = new DoubleSetting("Line Red", 255, 0, 255, 5);
-	private final DoubleSetting lG = new DoubleSetting("Line Green", 255, 0, 255, 5);
-	private final DoubleSetting lB = new DoubleSetting("Line Blue", 255,  0, 255, 5);
-
-	private final DoubleSetting fR = new DoubleSetting("Fill Red", 255, 0, 255, 5);
-	private final DoubleSetting fG = new DoubleSetting("Fill Green", 255, 0, 255, 5);
-	private final DoubleSetting fB = new DoubleSetting("Fill Blue", 255,  0, 255, 5);
 
 	private final CopyOnWriteArrayList<PacketData> packets = new CopyOnWriteArrayList<>();
 
@@ -81,7 +77,7 @@ public class LagRange extends Module {
 
 	@Override
 	public String getInfo() {
-		return delay.value.toString();
+		return delay.value.toString() + "ms";
 	}
 
 	@Override
@@ -109,27 +105,30 @@ public class LagRange extends Module {
 
 		shouldLag = false;
 
-		if (mc.thePlayer.movementInput.moveForward == 0 && mc.thePlayer.movementInput.moveStrafe == 0) {
+		if (!MovementUtil.isMoving()) {
 			flushPackets();
 			return;
 		}
 
-		for (Entity entity : mc.theWorld.loadedEntityList) {
-			if (!(entity instanceof EntityLivingBase))
+		for (final Entity en : mc.theWorld.loadedEntityList) {
+			if (!(en instanceof EntityPlayer))
 				continue;
 
-			if (entity == mc.thePlayer)
+			if (en == mc.thePlayer)
 				continue;
 
-			if (entity.isDead)
+			if (en.isDead)
 				continue;
 
-			if (mc.thePlayer.getDistanceSqToEntity(entity) < minRange.value * minRange.value) {
+			if (AntiBot.botList.contains(en))
+				continue;
+
+			if (mc.thePlayer.getDistanceSqToEntity(en) < minRange.value * minRange.value) {
 				shouldLag = false;
 				break;
 			}
 
-			if (mc.thePlayer.getDistanceSqToEntity(entity) > maxRange.value * maxRange.value)
+			if (mc.thePlayer.getDistanceSqToEntity(en) > maxRange.value * maxRange.value)
 				continue;
 
 			shouldLag = true;
@@ -139,34 +138,38 @@ public class LagRange extends Module {
 			flushPackets();
 	}
 
-	@EventTarget(noParamEvents = RenderTickEvent.class)
-	public void onRenderTick() {
+	@EventTarget(priority = EnumEventPriority.HIGHEST)
+	public void onTick_(TickEvent event) {
+		if (event.getType() != EnumEventType.PRE)
+			return;
+
 		if (packets.isEmpty())
 			return;
 
 		final long currTime = System.currentTimeMillis();
 
-		for (PacketData packetData : packets) {
-			if (currTime - packetData.receiveTime >= delay.value) {
-				if (packetData.packet instanceof C03PacketPlayer.C04PacketPlayerPosition) {
-					final C03PacketPlayer.C04PacketPlayerPosition C04 = (C03PacketPlayer.C04PacketPlayerPosition) packetData.packet;
+		for (final PacketData packetData : packets) {
+			if (currTime - packetData.receiveTime < delay.value)
+				continue;
 
-					lastPos = serverPos;
-					posTime = currTime;
-					serverPos = new Vec3(C04.getPositionX(), C04.getPositionY(), C04.getPositionZ());
-				}
+			if (packetData.packet instanceof C03PacketPlayer.C04PacketPlayerPosition) {
+				final C03PacketPlayer.C04PacketPlayerPosition C04 = (C03PacketPlayer.C04PacketPlayerPosition) packetData.packet;
 
-				if (packetData.packet instanceof C03PacketPlayer.C06PacketPlayerPosLook) {
-					final C03PacketPlayer.C06PacketPlayerPosLook C04 = (C03PacketPlayer.C06PacketPlayerPosLook) packetData.packet;
-
-					lastPos = serverPos;
-					posTime = currTime;
-					serverPos = new Vec3(C04.getPositionX(), C04.getPositionY(), C04.getPositionZ());
-				}
-
-				PacketUtil.sendPacketNoEvent(packetData.packet);
-				packets.remove(packetData);
+				lastPos = serverPos;
+				posTime = currTime;
+				serverPos = new Vec3(C04.getPositionX(), C04.getPositionY(), C04.getPositionZ());
 			}
+
+			if (packetData.packet instanceof C03PacketPlayer.C06PacketPlayerPosLook) {
+				final C03PacketPlayer.C06PacketPlayerPosLook C04 = (C03PacketPlayer.C06PacketPlayerPosLook) packetData.packet;
+
+				lastPos = serverPos;
+				posTime = currTime;
+				serverPos = new Vec3(C04.getPositionX(), C04.getPositionY(), C04.getPositionZ());
+			}
+
+			PacketUtil.sendPacketNoEvent(packetData.packet);
+			packets.remove(packetData);
 		}
 	}
 
@@ -193,27 +196,19 @@ public class LagRange extends Module {
 				mc.thePlayer.height
 		);
 
-		final RenderManager renderManager = mc.getRenderManager();
+		float colorProgress = mc.thePlayer.ticksExisted * ArrayListModule.INV_TICKS;
+		colorProgress -= (int) colorProgress;
 
-		double pX = RenderUtil.interpPos(serverPos.xCoord, fixedLastPos.xCoord, progress);
-		double pY = RenderUtil.interpPos(serverPos.yCoord, fixedLastPos.yCoord, progress);
-		double pZ = RenderUtil.interpPos(serverPos.zCoord, fixedLastPos.zCoord, progress);
+		final Color[] colors = ArrayListModule.getColors(ArrayListModule.COLOR.value);
 
-		if (rotate.value) {
-			GL11.glPushMatrix();
-			GL11.glTranslated(pX - renderManager.viewerPosX, pY - renderManager.viewerPosY, pZ - renderManager.viewerPosZ);
-			GL11.glRotatef(-mc.thePlayer.rotationYaw, 0.0f, 1.0f, 0.0f);
-			GL11.glTranslated(renderManager.viewerPosX - pX, renderManager.viewerPosY - pY, renderManager.viewerPosZ - pZ);
-		}
+		final Color fillColor = RenderUtil.getInterpolatedColor(colors[0], colors[1], colors[0], colorProgress);
+		final Color outlineColor = fillColor.darker();
 
 		if (lineBox.value)
-			RenderUtil.drawOutlinedBoundingBox(lastBoundingBox, boundingBox, 1.6f, lR.value.intValue(), lG.value.intValue(), lB.value.intValue(), progress);
+			RenderUtil.drawOutlinedBoundingBox(lastBoundingBox, boundingBox, 1.6f, outlineColor.getRed(), outlineColor.getGreen(), outlineColor.getBlue(), progress);
 
 		if (filledBox.value)
-			RenderUtil.drawBoundingBox(lastBoundingBox, boundingBox, fR.value.intValue(), fG.value.intValue(), fB.value.intValue(), fillOpacity.value.intValue(), progress);
-
-		if (rotate.value)
-			GL11.glPopMatrix();
+			RenderUtil.drawBoundingBox(lastBoundingBox, boundingBox, fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue(), fillOpacity.value.intValue(), progress);
 	}
 
 	@EventTarget
@@ -242,9 +237,8 @@ public class LagRange extends Module {
 			return;
 
 		synchronized (packets) {
-			for (final PacketData packet : packets) {
+			for (final PacketData packet : packets)
 				PacketUtil.sendPacketNoEvent(packet.packet);
-			}
 
 			packets.clear();
 		}

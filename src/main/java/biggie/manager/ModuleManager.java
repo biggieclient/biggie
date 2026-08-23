@@ -21,7 +21,6 @@ public class ModuleManager {
 		MODULES.addAll(Arrays.asList(
 				// combat modules
 				new AimAssist(),
-				new AutoSoup(),
 				new BackTrack(),
 				new KillAura(),
 				new LagRange(),
@@ -32,6 +31,8 @@ public class ModuleManager {
 
 				// misc modules
 				new AntiBot(),
+				new Timer(),
+				new Stuck(),
 
 				// movement modules
 				new NoItemSlow(),
@@ -45,6 +46,7 @@ public class ModuleManager {
 				new NoBlockHitDelay(),
 				new NoBreakSlow(),
 				new Scaffold(),
+				new AutoSoup(),
 
 				// render modules
 				new ClickGuiModule(),

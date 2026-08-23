@@ -15,29 +15,28 @@ public class InvMove extends Module {
 
 	@EventTarget
 	public void onPlayerInputEvent(PlayerInputEvent event) {
-		if (event.getType() == EnumEventType.POST) {
-			if (mc.theWorld != null && mc.thePlayer != null) {
-				if (mc.currentScreen instanceof GuiInventory) {
-					mc.thePlayer.movementInput.moveStrafe = 0.0F;
-					mc.thePlayer.movementInput.moveForward = 0.0F;
+		if (event.getType() != EnumEventType.POST)
+			return;
 
-					if (Keyboard.isKeyDown(mc.gameSettings.keyBindForward.getKeyCode())) {
-						++event.forward;
-					}
+		if (mc.theWorld == null && mc.thePlayer == null)
+			return;
 
-					if (Keyboard.isKeyDown(mc.gameSettings.keyBindBack.getKeyCode())) {
-						--event.forward;
-					}
+		if (!(mc.currentScreen instanceof GuiInventory))
+			return;
 
-					if (Keyboard.isKeyDown(mc.gameSettings.keyBindLeft.getKeyCode())) {
-						++event.strafe;
-					}
+		event.forward = 0.0f;
+		event.strafe = 0.0f;
 
-					if (Keyboard.isKeyDown(mc.gameSettings.keyBindRight.getKeyCode())) {
-						--event.strafe;
-					}
-				}
-			}
-		}
+		if (Keyboard.isKeyDown(mc.gameSettings.keyBindForward.getKeyCode()))
+			++event.forward;
+
+		if (Keyboard.isKeyDown(mc.gameSettings.keyBindBack.getKeyCode()))
+			--event.forward;
+
+		if (Keyboard.isKeyDown(mc.gameSettings.keyBindLeft.getKeyCode()))
+			++event.strafe;
+
+		if (Keyboard.isKeyDown(mc.gameSettings.keyBindRight.getKeyCode()))
+			--event.strafe;
 	}
 }

@@ -48,7 +48,7 @@ public class MoreKB extends Module {
 		if (event.getType() != EnumEventType.PRE)
 			return;
 
-		if (mode.value.equals("Left")) {
+		if (mode.value.equals("Legit")) {
 			mc.thePlayer.sprintingTicksLeft = 1;
 			attacked = false;
 		}

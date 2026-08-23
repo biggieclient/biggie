@@ -33,6 +33,11 @@ public class FastMine extends Module {
 	);
 
 	public FastMine() {
-		super("Fast Mine", ModuleCategory.PLAYER, Keyboard.KEY_NONE);
+		super("FastMine", ModuleCategory.PLAYER, Keyboard.KEY_NONE);
+	}
+
+	@Override
+	public String getInfo() {
+		return mode.value;
 	}
 }

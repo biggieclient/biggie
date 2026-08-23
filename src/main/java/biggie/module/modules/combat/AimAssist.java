@@ -80,6 +80,11 @@ public class AimAssist extends Module {
 	}
 
 	@Override
+	public String getInfo() {
+		return mode.value;
+	}
+
+	@Override
 	public void onDisable() {
 		target = null;
 		rots = null;

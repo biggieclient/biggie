@@ -245,11 +245,13 @@ public class Scaffold extends Module {
 
                 visitedList.add(neighborLong);
 
-                if (mc.thePlayer.getDistanceSq(neighbor) > rangeSq)
+                final Vec3 relVec = getRelPoint(facing.getOpposite(), searchMode.value.equals("Random"));
+                final Vec3 placeVec = new Vec3(neighbor.getX(), neighbor.getY(), neighbor.getZ()).add(relVec);
+
+                if (mc.thePlayer.getDistanceSq(placeVec.xCoord, placeVec.yCoord, placeVec.zCoord) > rangeSq)
                     continue;
 
                 if (mc.theWorld.getBlockState(neighbor).getBlock().getMaterial().isSolid()) {
-                    final Vec3 relVec = getRelPoint(facing.getOpposite(), searchMode.value.equals("Random"));
                     targetBlock = new BlockData(new Vec3(neighbor), facing.getOpposite(), neighbor, relVec);
                     break;
                 }

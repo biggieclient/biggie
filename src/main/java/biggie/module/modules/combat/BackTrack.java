@@ -8,6 +8,7 @@ import biggie.event.render.Render3DEvent;
 import biggie.manager.ModuleManager;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
+import biggie.module.modules.render.ArrayListModule;
 import biggie.setting.settings.BooleanSetting;
 import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.IntegerSetting;
@@ -27,6 +28,7 @@ import net.minecraft.util.AxisAlignedBB;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -41,17 +43,8 @@ public class BackTrack extends Module {
 
 	private final BooleanSetting lineBox = new BooleanSetting("Line Box", true);
 	private final BooleanSetting filledBox = new BooleanSetting("Filled Box", false);
-	private final BooleanSetting rotate = new BooleanSetting("Rotate", true);
 
 	private final DoubleSetting fillOpacity = new DoubleSetting("Fill Opacity", 45, 20, 100, 5);
-
-	private final DoubleSetting lR = new DoubleSetting("Line Red", 255, 0, 255, 5);
-	private final DoubleSetting lG = new DoubleSetting("Line Green", 255, 0, 255, 5);
-	private final DoubleSetting lB = new DoubleSetting("Line Blue", 255,  0, 255, 5);
-
-	private final DoubleSetting fR = new DoubleSetting("Fill Red", 255, 0, 255, 5);
-	private final DoubleSetting fG = new DoubleSetting("Fill Green", 255, 0, 255, 5);
-	private final DoubleSetting fB = new DoubleSetting("Fill Blue", 255,  0, 255, 5);
 
 	private final CopyOnWriteArrayList<PacketData> packets = new CopyOnWriteArrayList<>();
 	private EntityLivingBase target = null;
@@ -72,7 +65,7 @@ public class BackTrack extends Module {
 
 	@Override
 	public String getInfo() {
-		return delay.value.toString();
+		return delay.value.toString() + "ms";
 	}
 
 	@EventTarget(priority = EnumEventPriority.HIGHEST)
@@ -125,7 +118,7 @@ public class BackTrack extends Module {
 		if (target == null)
 			return;
 
-        for (PacketData data : packets) {
+        for (final PacketData data : packets) {
 			if (currTime - data.receiveTime < delay.value)
 				continue;
 
@@ -154,27 +147,19 @@ public class BackTrack extends Module {
 			final AxisAlignedBB boundingBox = RenderUtil.getBoundingBox(pos.x, pos.y, pos.z, target.width, target.height);
 			final AxisAlignedBB lastBoundingBox = RenderUtil.getBoundingBox(pos.lastX, pos.lastY, pos.lastZ, target.width, target.height);
 
-			final RenderManager renderManager = mc.getRenderManager();
+			float colorProgress = mc.thePlayer.ticksExisted * ArrayListModule.INV_TICKS;
+			colorProgress -= (int) colorProgress;
 
-			double pX = RenderUtil.interpPos(pos.x, pos.lastX, progress);
-			double pY = RenderUtil.interpPos(pos.y, pos.lastY, progress);
-			double pZ = RenderUtil.interpPos(pos.z, pos.lastZ, progress);
+			final Color[] colors = ArrayListModule.getColors(ArrayListModule.COLOR.value);
 
-			if (rotate.value) {
-				GL11.glPushMatrix();
-				GL11.glTranslated(pX - renderManager.viewerPosX, pY - renderManager.viewerPosY, pZ - renderManager.viewerPosZ);
-				GL11.glRotatef(-target.rotationYaw, 0.0f, 1.0f, 0.0f);
-				GL11.glTranslated(renderManager.viewerPosX - pX, renderManager.viewerPosY - pY, renderManager.viewerPosZ - pZ);
-			}
+			final Color fillColor = RenderUtil.getInterpolatedColor(colors[0], colors[1], colors[0], colorProgress);
+			final Color outlineColor = fillColor.darker();
 
 			if (lineBox.value)
-				RenderUtil.drawOutlinedBoundingBox(lastBoundingBox, boundingBox, 1.6f, lR.value.intValue(), lG.value.intValue(), lB.value.intValue(), progress);
+				RenderUtil.drawOutlinedBoundingBox(lastBoundingBox, boundingBox, 1.6f, outlineColor.getRed(), outlineColor.getGreen(), outlineColor.getBlue(), progress);
 
 			if (filledBox.value)
-				RenderUtil.drawBoundingBox(lastBoundingBox, boundingBox, fR.value.intValue(), fG.value.intValue(), fB.value.intValue(), fillOpacity.value.intValue(), progress);
-
-			if (rotate.value)
-				GL11.glPopMatrix();
+				RenderUtil.drawBoundingBox(lastBoundingBox, boundingBox, fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue(), fillOpacity.value.intValue(), progress);
 		}
 	}
 
@@ -289,9 +274,8 @@ public class BackTrack extends Module {
 
 	void flushPackets() {
 		synchronized (packets) {
-			for (PacketData data : packets) {
+			for (final PacketData data : packets)
 				PacketUtil.receivePacket(data.packet);
-			}
 
 			packets.clear();
 		}

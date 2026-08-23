@@ -87,11 +87,6 @@ public class LeftClicker extends Module {
 		}
 	}
 
-	@Override
-	public String getInfo() {
-		return randomizerType.value.equals("Constant") ? cps.value.toString() : minCps.value.toString() + " - " + maxCps.value;
-	}
-
 	@EventTarget(noParamEvents = GameLoopEvent.class)
 	public void onGameLoop() {
 		if (mc.theWorld == null || mc.thePlayer == null)
