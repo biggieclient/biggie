@@ -43,7 +43,7 @@ public class AntiBot extends Module {
 
         final long currTime = System.currentTimeMillis();
 
-        if (lastCheckMs - currTime < reCheckDelay.value)
+        if (currTime - lastCheckMs < reCheckDelay.value)
             return;
 
         for (final EntityPlayer enPlayer : mc.theWorld.playerEntities) {
