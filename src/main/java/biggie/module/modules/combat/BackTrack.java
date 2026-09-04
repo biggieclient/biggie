@@ -27,7 +27,7 @@ import net.minecraft.util.AxisAlignedBB;
 import org.lwjgl.input.Keyboard;
 
 import java.awt.*;
-import java.util.*;
+import java.util.LinkedHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class BackTrack extends Module {
@@ -173,9 +173,9 @@ public class BackTrack extends Module {
 
 		if (
 				(event.packet instanceof S00PacketKeepAlive && !cancelKeepAlive.value) ||
-						event.packet instanceof S02PacketChat                                  ||
-						event.packet instanceof S29PacketSoundEffect                           ||
-						(event.packet instanceof S01PacketPong && !cancelPong.value)           ||
+						event.packet instanceof S02PacketChat ||
+						event.packet instanceof S29PacketSoundEffect ||
+						(event.packet instanceof S01PacketPong && !cancelPong.value) ||
 						event.packet instanceof S06PacketUpdateHealth
 		)
 			return;

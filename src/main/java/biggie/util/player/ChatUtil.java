@@ -1,7 +1,6 @@
 package biggie.util.player;
 
 import biggie.util.AbstractUtil;
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 

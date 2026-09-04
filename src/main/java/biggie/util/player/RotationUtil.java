@@ -25,7 +25,7 @@ public class RotationUtil {
 		final float yaw = (float) Math.toDegrees(Math.atan2(dZ, dX)) - 90;
 		final float pitch = (float) -Math.toDegrees(Math.atan2(dY, module));
 
-		return new float[] { yaw, pitch };
+		return new float[]{yaw, pitch};
 	}
 
 	public static float[] getRotationTo(final EntityPlayer from, final double x, final double y, final double z) {
@@ -38,7 +38,7 @@ public class RotationUtil {
 		final float yaw = (float) Math.toDegrees(Math.atan2(dZ, dX)) - 90;
 		final float pitch = (float) -Math.toDegrees(Math.atan2(dY, module));
 
-		return new float[] { yaw, pitch };
+		return new float[]{yaw, pitch};
 	}
 
 	public static float getInterpRot(final float yaw, final float destYaw, final float progress) {
@@ -82,7 +82,7 @@ public class RotationUtil {
 
 		return world.rayTraceBlocks(
 				new Vec3(from.posX, from.posY + from.getEyeHeight(), from.posZ),
-				new Vec3(from.posX + xDir * rayDistance, from.posY + from.getEyeHeight() + yDir * rayDistance, from.posZ  + zDir * rayDistance)
+				new Vec3(from.posX + xDir * rayDistance, from.posY + from.getEyeHeight() + yDir * rayDistance, from.posZ + zDir * rayDistance)
 		);
 	}
 
@@ -138,7 +138,7 @@ public class RotationUtil {
 
 		final MovingObjectPosition blockRayTrace =
 				checkBlocks ? world.rayTraceBlocks(eyePos, rayVec, false, false, true)
-				: null;
+						: null;
 
 		if (blockRayTrace != null) {
 			closestDist = eyePos.distanceTo(blockRayTrace.hitVec);
@@ -191,9 +191,9 @@ public class RotationUtil {
 
 	// WARNING: Isso não é uma gambiarra, mas meio que isso deve gastar processamento para um caralho ja que
 	// faz um dot product pra cada combinação de movement pra achar o vetor mais parecido com o do client usando o yaw do server.
-	public static float[] getFixedMove(final EntityPlayer from, final float clientYaw, final float serverYaw, final float  clientForward, final float clientStrafe) {
+	public static float[] getFixedMove(final EntityPlayer from, final float clientYaw, final float serverYaw, final float clientForward, final float clientStrafe) {
 		if (clientForward == 0 && clientStrafe == 0)
-			return new float[] { 0, 0 };
+			return new float[]{0, 0};
 
 		final float[] clientMove = MathUtil.getMovementFromYawAndInput(clientYaw, clientForward, clientStrafe, 1.0f);
 
@@ -232,6 +232,6 @@ public class RotationUtil {
 		}
 
 		final float factor = from.isSneaking() ? 0.3f : 1.0f;
-		return new float[] { closestForward * factor , closestStrafe * factor };
+		return new float[]{closestForward * factor, closestStrafe * factor};
 	}
 }

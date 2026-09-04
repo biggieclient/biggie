@@ -7,10 +7,11 @@ import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.setting.settings.IntegerSetting;
 import biggie.setting.settings.ListSetting;
+import biggie.util.player.ChatUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.entity.Entity;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
 import org.lwjgl.input.Keyboard;
 
@@ -19,8 +20,10 @@ public class Velocity extends Module {
 			"Mode",
 			"Jump",
 			"Jump",
-			"MinemenAir"
+			"MinemenAir",
+			"Reduce"
 	);
+
 	private final IntegerSetting airTicks = new IntegerSetting(
 			"Air Ticks",
 			2,
@@ -28,6 +31,15 @@ public class Velocity extends Module {
 			5,
 			1,
 			() -> mode.value.equals("MinemenAir")
+	);
+
+	private final IntegerSetting reduceAmount = new IntegerSetting(
+			"Reduce Amount",
+			10,
+			5,
+			20,
+			1,
+			() -> mode.value.equals("Reduce")
 	);
 
 	public boolean receivedDamage = false;
@@ -96,6 +108,18 @@ public class Velocity extends Module {
 			}
 
 			KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), true);
+		}
+	}
+
+	public void onSlowDown(Entity targetEntity) {
+		if (receivedDamage) {
+			if (mode.value.equals("Reduce")) {
+				receivedDamage = false;
+
+				for (int i = 0; i < reduceAmount.value; i++) {
+					mc.thePlayer.attackTargetEntityWithCurrentItem(targetEntity);
+				}
+			}
 		}
 	}
 }

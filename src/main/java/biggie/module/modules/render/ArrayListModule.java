@@ -52,7 +52,7 @@ public class ArrayListModule extends Module {
 	private final ListSetting bars = new ListSetting(
 			"Bars",
 			"Side",
-            "None",
+			"None",
 			"Side",
 			"Outline"
 	);
@@ -226,7 +226,7 @@ public class ArrayListModule extends Module {
 	}
 
 	public static Color[] getColors(final String color) {
-		final Color[] colors = new Color[] { Color.WHITE, Color.WHITE };
+		final Color[] colors = new Color[]{Color.WHITE, Color.WHITE};
 
 		switch (color) {
 			case "Red":

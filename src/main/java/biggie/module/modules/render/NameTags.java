@@ -15,75 +15,75 @@ import org.lwjgl.opengl.GL11;
 
 // TODO: Terminar isso algum dia.
 public class NameTags extends Module {
-    public NameTags() {
-        super("NameTags", ModuleCategory.RENDER, Keyboard.KEY_NONE);
-    }
-    
-    @EventTarget(noParamEvents = Render3DEvent.class)
-    public void onRender3D() {
-        if (mc.thePlayer == null || mc.theWorld == null)
-            return;
+	public NameTags() {
+		super("NameTags", ModuleCategory.RENDER, Keyboard.KEY_NONE);
+	}
 
-        for (EntityPlayer player : mc.theWorld.playerEntities) {
-            if (player == mc.thePlayer)
-                continue;
+	@EventTarget(noParamEvents = Render3DEvent.class)
+	public void onRender3D() {
+		if (mc.thePlayer == null || mc.theWorld == null)
+			return;
 
-            if (player.isDead)
-                continue;
+		for (EntityPlayer player : mc.theWorld.playerEntities) {
+			if (player == mc.thePlayer)
+				continue;
 
-            drawPlayerNametag(player);
-        }
-    }
+			if (player.isDead)
+				continue;
 
-    @EventTarget
-    public void onRenderEntityNameTag(RenderEntityNameTagEvent event) {
-        if (!(event.en instanceof EntityPlayer) || !mc.theWorld.playerEntities.contains(event.en) || event.en == mc.thePlayer || event.en.isDead)
-            return;
+			drawPlayerNametag(player);
+		}
+	}
 
-        event.setCancelled(true);
-    }
+	@EventTarget
+	public void onRenderEntityNameTag(RenderEntityNameTagEvent event) {
+		if (!(event.en instanceof EntityPlayer) || !mc.theWorld.playerEntities.contains(event.en) || event.en == mc.thePlayer || event.en.isDead)
+			return;
 
-    void drawPlayerNametag(final EntityPlayer enPlayer) {
-        final Vec3 lastPos = new Vec3(enPlayer.lastTickPosX, enPlayer.lastTickPosY + enPlayer.getEyeHeight() + 0.5, enPlayer.lastTickPosZ);
-        final Vec3 pos = new Vec3(enPlayer.posX, enPlayer.posY + enPlayer.getEyeHeight() + 0.5, enPlayer.posZ);
+		event.setCancelled(true);
+	}
 
-        final RenderManager renderManager = mc.getRenderManager();
-        final float distanceScale = mc.thePlayer.getDistanceToEntity(enPlayer) / 12.5f;
-        final float scale = 0.016666668f * 1.6f * distanceScale;
+	void drawPlayerNametag(final EntityPlayer enPlayer) {
+		final Vec3 lastPos = new Vec3(enPlayer.lastTickPosX, enPlayer.lastTickPosY + enPlayer.getEyeHeight() + 0.5, enPlayer.lastTickPosZ);
+		final Vec3 pos = new Vec3(enPlayer.posX, enPlayer.posY + enPlayer.getEyeHeight() + 0.5, enPlayer.posZ);
 
-        final double pX = RenderUtil.interpPos(pos.xCoord, lastPos.xCoord, ServerRotation.timer.renderPartialTicks);
-        final double pY = RenderUtil.interpPos(pos.yCoord, lastPos.yCoord, ServerRotation.timer.renderPartialTicks);
-        final double pZ = RenderUtil.interpPos(pos.zCoord, lastPos.zCoord, ServerRotation.timer.renderPartialTicks);
+		final RenderManager renderManager = mc.getRenderManager();
+		final float distanceScale = mc.thePlayer.getDistanceToEntity(enPlayer) / 12.5f;
+		final float scale = 0.016666668f * 1.6f * distanceScale;
 
-        GL11.glPushMatrix();
+		final double pX = RenderUtil.interpPos(pos.xCoord, lastPos.xCoord, ServerRotation.timer.renderPartialTicks);
+		final double pY = RenderUtil.interpPos(pos.yCoord, lastPos.yCoord, ServerRotation.timer.renderPartialTicks);
+		final double pZ = RenderUtil.interpPos(pos.zCoord, lastPos.zCoord, ServerRotation.timer.renderPartialTicks);
 
-        GL11.glTranslated(pX - renderManager.viewerPosX, pY - renderManager.viewerPosY, pZ - renderManager.viewerPosZ);
+		GL11.glPushMatrix();
 
-        GL11.glRotatef(-renderManager.playerViewY, 0.0f, 1.0f, 0.0f);
-        GL11.glRotatef(renderManager.playerViewX, 1.0f, 0.0f, 0.0f);
+		GL11.glTranslated(pX - renderManager.viewerPosX, pY - renderManager.viewerPosY, pZ - renderManager.viewerPosZ);
 
-        GL11.glScaled(scale, scale, scale);
+		GL11.glRotatef(-renderManager.playerViewY, 0.0f, 1.0f, 0.0f);
+		GL11.glRotatef(renderManager.playerViewX, 1.0f, 0.0f, 0.0f);
 
-        RenderUtil.drawWorldRect(new Vec3(0, 0, 0), new Vec3(0, 0, 0), mc.fontRendererObj.getStringWidth(enPlayer.getDisplayNameString()) + 2, mc.fontRendererObj.FONT_HEIGHT + 2, 0, 0, 0, 100);
+		GL11.glScaled(scale, scale, scale);
 
-        GL11.glRotatef(-renderManager.playerViewX, 1.0f, 0.0f, 0.0f);
-        GL11.glRotatef(renderManager.playerViewY, 0.0f, 1.0f, 0.0f);
+		RenderUtil.drawWorldRect(new Vec3(0, 0, 0), new Vec3(0, 0, 0), mc.fontRendererObj.getStringWidth(enPlayer.getDisplayNameString()) + 2, mc.fontRendererObj.FONT_HEIGHT + 2, 0, 0, 0, 100);
 
-        GL11.glScaled(1.0f / scale, 1.0f / scale, 1.0f / scale);
+		GL11.glRotatef(-renderManager.playerViewX, 1.0f, 0.0f, 0.0f);
+		GL11.glRotatef(renderManager.playerViewY, 0.0f, 1.0f, 0.0f);
 
-        GL11.glTranslated(renderManager.viewerPosX - pX, renderManager.viewerPosY - pY, renderManager.viewerPosZ - pZ);
+		GL11.glScaled(1.0f / scale, 1.0f / scale, 1.0f / scale);
 
-        RenderUtil.drawWorldText(
-                lastPos,
-                pos,
-                enPlayer.getDisplayNameString(),
-                255,
-                255,
-                255,
-                255,
-                scale
-        );
+		GL11.glTranslated(renderManager.viewerPosX - pX, renderManager.viewerPosY - pY, renderManager.viewerPosZ - pZ);
 
-        GL11.glPopMatrix();
-    }
+		RenderUtil.drawWorldText(
+				lastPos,
+				pos,
+				enPlayer.getDisplayNameString(),
+				255,
+				255,
+				255,
+				255,
+				scale
+		);
+
+		GL11.glPopMatrix();
+	}
 }

@@ -1,7 +1,6 @@
 package biggie.util.render;
 
 import biggie.util.AbstractUtil;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.entity.RenderManager;
@@ -195,8 +194,7 @@ public class RenderUtil extends AbstractUtil {
 			final AxisAlignedBB lastBoundingBox, final AxisAlignedBB boundingBox,
 			final float lineWidth,
 			final int r, final int g, final int b, final float progress
-	)
-	{
+	) {
 		final RenderManager renderManager = mc.getRenderManager();
 		final Tessellator tess = Tessellator.getInstance();
 		final WorldRenderer worldRenderer = tess.getWorldRenderer();

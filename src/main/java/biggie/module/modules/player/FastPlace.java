@@ -20,28 +20,28 @@ public class FastPlace extends Module {
 			1
 	);
 
-    private final BooleanSetting blockCheck = new BooleanSetting(
-            "Block Check",
-            true
-    );
+	private final BooleanSetting blockCheck = new BooleanSetting(
+			"Block Check",
+			true
+	);
 
-    public FastPlace() {
-        super("FastPlace", ModuleCategory.PLAYER, Keyboard.KEY_NONE);
-    }
+	public FastPlace() {
+		super("FastPlace", ModuleCategory.PLAYER, Keyboard.KEY_NONE);
+	}
 
-    @Override
-    public String getInfo() {
-        return delay.value.toString();
-    }
+	@Override
+	public String getInfo() {
+		return delay.value.toString();
+	}
 
-    @EventTarget
-    public void onTick(TickEvent event) {
-        if (event.getType() != EnumEventType.PRE)
-            return;
+	@EventTarget
+	public void onTick(TickEvent event) {
+		if (event.getType() != EnumEventType.PRE)
+			return;
 
-        if (blockCheck.value && (mc.thePlayer.getHeldItem() == null || mc.thePlayer.getHeldItem().getItem() == null || !(mc.thePlayer.getHeldItem().getItem() instanceof ItemBlock)))
-            return;
+		if (blockCheck.value && (mc.thePlayer.getHeldItem() == null || mc.thePlayer.getHeldItem().getItem() == null || !(mc.thePlayer.getHeldItem().getItem() instanceof ItemBlock)))
+			return;
 
 		((MinecraftAccessor) mc).setRightClickDelayTimer(delay.value);
-    }
+	}
 }

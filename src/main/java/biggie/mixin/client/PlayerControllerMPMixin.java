@@ -2,6 +2,7 @@ package biggie.mixin.client;
 
 import biggie.event.client.AttackEvent;
 import biggie.manager.ModuleManager;
+import biggie.module.modules.combat.Velocity;
 import biggie.module.modules.player.FastMine;
 import biggie.module.modules.player.NoBlockHitDelay;
 import net.lenni0451.asmevents.EventManager;
@@ -15,7 +16,9 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.*;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -82,6 +85,25 @@ public class PlayerControllerMPMixin {
 			CallbackInfo ci
 	) {
 		EventManager.call(new AttackEvent(EnumEventType.PRE, targetEntity));
+	}
+
+	@Inject(
+			method = "attackEntity",
+			at = @At(
+					value = "INVOKE",
+					target = "Lnet/minecraft/entity/player/EntityPlayer;attackTargetEntityWithCurrentItem(Lnet/minecraft/entity/Entity;)V"
+			)
+	)
+	public void onAttackEntity_velocityReduce(
+			EntityPlayer playerIn,
+			Entity targetEntity,
+			CallbackInfo ci
+	) {
+		Velocity velocity = ModuleManager.getModule(Velocity.class);
+
+		if (velocity.isEnabled()) {
+			velocity.onSlowDown(targetEntity);
+		}
 	}
 
 	@Inject(

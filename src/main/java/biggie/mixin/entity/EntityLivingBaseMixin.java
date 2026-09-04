@@ -15,38 +15,38 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(EntityLivingBase.class)
 public abstract class EntityLivingBaseMixin extends Entity {
-    public EntityLivingBaseMixin(World worldIn) {
-        super(worldIn);
-    }
+	public EntityLivingBaseMixin(World worldIn) {
+		super(worldIn);
+	}
 
-    @Inject(
-            method = "jump",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    public void jump(CallbackInfo ci) {
-        final EntityLivingBase en = (EntityLivingBase) (Object) this;
+	@Inject(
+			method = "jump",
+			at = @At("HEAD"),
+			cancellable = true
+	)
+	public void jump(CallbackInfo ci) {
+		final EntityLivingBase en = (EntityLivingBase) (Object) this;
 
-        if (en instanceof EntityPlayerSP) {
-            final JumpEvent jumpEvent = new JumpEvent(this.rotationYaw);
-            EventManager.call(jumpEvent);
+		if (en instanceof EntityPlayerSP) {
+			final JumpEvent jumpEvent = new JumpEvent(this.rotationYaw);
+			EventManager.call(jumpEvent);
 
-            this.motionY = 0.42f;
+			this.motionY = 0.42f;
 
-            if (en.isPotionActive(Potion.jump)) {
-                this.motionY += (en.getActivePotionEffect(Potion.jump).getAmplifier() + 1f) * 0.1f;
-            }
+			if (en.isPotionActive(Potion.jump)) {
+				this.motionY += (en.getActivePotionEffect(Potion.jump).getAmplifier() + 1f) * 0.1f;
+			}
 
-            if (this.isSprinting()) {
-                float radYaw = (float) Math.toRadians(jumpEvent.yaw);
-                this.motionX -= Math.sin(radYaw) * 0.2f;
-                this.motionZ += Math.cos(radYaw) * 0.2f;
-            }
+			if (this.isSprinting()) {
+				float radYaw = (float) Math.toRadians(jumpEvent.yaw);
+				this.motionX -= Math.sin(radYaw) * 0.2f;
+				this.motionZ += Math.cos(radYaw) * 0.2f;
+			}
 
-            this.isAirBorne = true;
-            ForgeHooks.onLivingJump(en);
+			this.isAirBorne = true;
+			ForgeHooks.onLivingJump(en);
 
-            ci.cancel();
-        }
-    }
+			ci.cancel();
+		}
+	}
 }

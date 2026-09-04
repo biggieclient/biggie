@@ -31,7 +31,7 @@ public class ModeComponent implements Component {
 		mode = mode.replace("_", " ");
 
 		int bruhWidth = (int) (Minecraft.getMinecraft().fontRendererObj.getStringWidth(this.setting.name + ": ") * 0.5);
-		String formattedValue = EnumChatFormatting.AQUA + mode.substring(0, 1).toUpperCase() + mode.substring(1).toLowerCase();
+		String formattedValue = EnumChatFormatting.AQUA + mode;
 
 		Minecraft.getMinecraft().fontRendererObj.drawString(this.setting.name + ": ", (float) ((this.parentModule.category.getX() + 4) * 2), (float) ((this.parentModule.category.getY() + this.offsetY + 4) * 2), 0xffffffff, true);
 

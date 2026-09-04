@@ -1,11 +1,9 @@
 package biggie.module.modules.combat;
 
-import biggie.event.client.GameLoopEvent;
 import biggie.event.client.LoadWorldEvent;
 import biggie.event.client.TickEvent;
 import biggie.event.network.SendPacketEvent;
 import biggie.event.render.Render3DEvent;
-import biggie.event.render.RenderTickEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
 import biggie.module.modules.misc.AntiBot;
@@ -19,9 +17,7 @@ import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventPriority;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.client.C02PacketUseEntity;
@@ -238,7 +234,7 @@ public class LagRange extends Module {
 		posTime = 0;
 	}
 
-	static class PacketData {
+	private static class PacketData {
 		public final long receiveTime;
 		public final Packet<?> packet;
 

@@ -10,27 +10,27 @@ import net.lenni0451.asmevents.event.enums.EnumEventType;
 import org.lwjgl.input.Keyboard;
 
 public class Timer extends Module {
-    private final DoubleSetting multiplier = new DoubleSetting("Multiplier", 1, 0, 2, 0.01);
+	private final DoubleSetting multiplier = new DoubleSetting("Multiplier", 1, 0, 2, 0.01);
 
-    public Timer() {
-        super("Timer", ModuleCategory.MISC, Keyboard.KEY_NONE);
-    }
+	public Timer() {
+		super("Timer", ModuleCategory.MISC, Keyboard.KEY_NONE);
+	}
 
-    @Override
-    public String getInfo() {
-        return multiplier.value.toString() + "x";
-    }
+	@Override
+	public String getInfo() {
+		return multiplier.value.toString() + "x";
+	}
 
-    @EventTarget
-    public void onUpdate(UpdateEvent event) {
-        if (event.getType() != EnumEventType.PRE)
-            return;
+	@EventTarget
+	public void onUpdate(UpdateEvent event) {
+		if (event.getType() != EnumEventType.PRE)
+			return;
 
-        ((MinecraftAccessor) mc).getTimer().timerSpeed = multiplier.value.floatValue();
-    }
+		((MinecraftAccessor) mc).getTimer().timerSpeed = multiplier.value.floatValue();
+	}
 
-    @Override
-    public void onDisable() {
-        ((MinecraftAccessor) mc).getTimer().timerSpeed = 1.0f;
-    }
+	@Override
+	public void onDisable() {
+		((MinecraftAccessor) mc).getTimer().timerSpeed = 1.0f;
+	}
 }
