@@ -18,7 +18,6 @@ import biggie.util.render.RenderUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.lenni0451.asmevents.event.enums.EnumEventPriority;
 import net.lenni0451.asmevents.event.enums.EnumEventType;
-import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.network.Packet;
@@ -26,7 +25,6 @@ import net.minecraft.network.play.server.*;
 import net.minecraft.network.status.server.S01PacketPong;
 import net.minecraft.util.AxisAlignedBB;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
 import java.util.*;
@@ -183,6 +181,10 @@ public class BackTrack extends Module {
 			return;
 
 		if (event.packet instanceof S0CPacketSpawnPlayer || event.packet instanceof S0FPacketSpawnMob) {
+			return;
+		}
+
+		if (event.packet instanceof S01PacketJoinGame) {
 			return;
 		}
 

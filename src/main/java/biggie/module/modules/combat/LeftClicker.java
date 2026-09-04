@@ -3,16 +3,14 @@ package biggie.module.modules.combat;
 import biggie.event.client.GameLoopEvent;
 import biggie.module.Module;
 import biggie.module.ModuleCategory;
-import biggie.setting.settings.BooleanSetting;
+import biggie.setting.settings.DoubleSetting;
 import biggie.setting.settings.IntegerSetting;
 import biggie.setting.settings.ListSetting;
+import biggie.util.math.MathUtil;
 import biggie.util.misc.MouseUtil;
-import biggie.util.player.RotationUtil;
 import net.lenni0451.asmevents.event.EventTarget;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -23,8 +21,31 @@ public class LeftClicker extends Module {
 			"Randomizer Type",
 			"Random",
 			"Random",
-			"Gaussian",
-			"Constant"
+			"Gaussian"
+	);
+
+	private final IntegerSetting changeCpsChance = new IntegerSetting(
+			"Change CPS Chance",
+			20,
+			1,
+			100,
+			1
+	);
+
+	private final IntegerSetting outlierChance = new IntegerSetting(
+			"Outlier Chance",
+			10,
+			1,
+			100,
+			1
+	);
+
+	private final IntegerSetting outlierAmount = new IntegerSetting(
+			"Outlier Amount",
+			50,
+			1,
+			100,
+			1
 	);
 
 	private final IntegerSetting minCps = new IntegerSetting(
@@ -33,7 +54,7 @@ public class LeftClicker extends Module {
 			1,
 			100,
 			1,
-			() -> !randomizerType.value.equals("Constant")
+			() -> !randomizerType.value.equals("Gaussian")
 	);
 
 	private final IntegerSetting maxCps = new IntegerSetting(
@@ -42,7 +63,7 @@ public class LeftClicker extends Module {
 			1,
 			100,
 			1,
-			() -> !randomizerType.value.equals("Constant")
+			() -> !randomizerType.value.equals("Gaussian")
 	);
 
 	private final IntegerSetting cps = new IntegerSetting(
@@ -51,21 +72,22 @@ public class LeftClicker extends Module {
 			1,
 			100,
 			1,
-			() -> randomizerType.value.equals("Constant")
+			() -> randomizerType.value.equals("Gaussian")
 	);
 
-	private final BooleanSetting reverse = new BooleanSetting(
-			"Max Values",
-			false,
+	private final DoubleSetting stdDev = new DoubleSetting(
+			"STD Dev",
+			1.1,
+			1.0,
+			2.0,
+			0.01,
 			() -> randomizerType.value.equals("Gaussian")
 	);
 
 	private Random random;
 	private long lastMs;
+	private long delay = 0;
 	private boolean holding;
-
-	// TODO: Caso o player esteja segurando o botão esquerdo e esteja mirando num bloco, fazer ele
-	//  pressionar o botão esquerdo denovo pra não cancelar o break quando voce mirar num bloco enquanto o clicker ta funcionando.
 
 	public LeftClicker() {
 		super("LeftClicker", ModuleCategory.COMBAT, Keyboard.KEY_NONE);
@@ -74,6 +96,8 @@ public class LeftClicker extends Module {
 	@Override
 	public void onEnable() {
 		random = new Random();
+
+		generateRandomCps();
 	}
 
 	@Override
@@ -92,8 +116,6 @@ public class LeftClicker extends Module {
 		if (mc.theWorld == null || mc.thePlayer == null)
 			return;
 
-		long delay = 0;
-		final long currTime = System.currentTimeMillis();
 		final int attackKey = mc.gameSettings.keyBindAttack.getKeyCode();
 
 		if (mc.currentScreen != null) {
@@ -101,20 +123,8 @@ public class LeftClicker extends Module {
 			MouseUtil.setButtonState(attackKey + 100, false);
 
 			holding = false;
-			return;
-		}
 
-		switch (randomizerType.value) {
-			case "Random":
-				delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * random.nextDouble()));
-				break;
-			case "Gaussian":
-				final double factor = reverse.value ? (1 - MathHelper.clamp_double(0.5 + random.nextGaussian() * 0.15, 0, 1)) : MathHelper.clamp_double(0.5 + random.nextGaussian() * 0.15, 0, 1);
-				delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * (factor)));
-				break;
-			case "Constant":
-				delay = (long) 1000 / cps.value;
-				break;
+			return;
 		}
 
 		if (holding) {
@@ -122,15 +132,21 @@ public class LeftClicker extends Module {
 			MouseUtil.setButtonState(attackKey + 100, false);
 
 			holding = false;
+
 			return;
 		}
 
 		final boolean canClick = mc.objectMouseOver.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK;
+		final long currentTime = System.currentTimeMillis();
 
 		if (!Mouse.isButtonDown(attackKey + 100))
 			return;
 
-		if (currTime - lastMs < delay || !canClick)
+		if ((int) (random.nextDouble() * 100) <= changeCpsChance.value) {
+			generateRandomCps();
+		}
+
+		if (currentTime - lastMs < delay || !canClick)
 			return;
 
 		KeyBinding.setKeyBindState(attackKey, true);
@@ -138,7 +154,29 @@ public class LeftClicker extends Module {
 
 		MouseUtil.setButtonState(attackKey + 100, true);
 
-		lastMs = currTime;
+		lastMs = currentTime;
 		holding = true;
+	}
+
+	// IntelliJ bom
+	private void generateRandomCps() {
+		switch (randomizerType.value) {
+			case "Random":
+				delay = (long) (1000 / (maxCps.value - (maxCps.value - minCps.value) * random.nextDouble()));
+
+				break;
+			case "Gaussian":
+				delay = (long) (1000 / MathUtil.clampDouble(
+						(int) (random.nextGaussian() * stdDev.value + cps.value),
+						1,
+						cps.value
+				));
+
+				break;
+		}
+
+		if ((int) (random.nextDouble() * 100) <= outlierChance.value) {
+			delay += (long) (outlierAmount.value - (outlierAmount.value - 1) * random.nextDouble());
+		}
 	}
 }

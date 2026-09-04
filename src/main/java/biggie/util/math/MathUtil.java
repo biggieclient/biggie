@@ -68,4 +68,8 @@ public class MathUtil {
 
         return linearStep;
     }
+
+    public static double clampDouble(double value, double min, double max) {
+        return Math.max(min, Math.min(value, max));
+    }
 }
